@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import tf_utils as tfu
+import tfu
 import du
 
 train, valid, test = du.tasks.image_tasks.mnist("float32")
@@ -60,7 +60,7 @@ for grad, var in grads:
 merged_summary_op = tf.merge_all_summaries()
 
 
-with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+with tf.Session(config=tf.ConfigProto()) as sess:
     sess.run(tf.initialize_all_variables())
 
     summary_writer = tf.train.SummaryWriter("./tensorflow_logs",
@@ -70,11 +70,25 @@ with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
     for epoch_idx in range(10):
         for batch_idx in range(1000):
             batch = train_gen.next()
-            _, summary = sess.run([train_step, merged_summary_op],
-                                  feed_dict={x: batch["x"],
-                                             y_: batch["y"],
-                                             keep_prob: 0.5})
-            summary_writer.add_summary(summary, epoch_idx * 1000 + batch_idx)
+            step = epoch_idx * 1000 + batch_idx
+            if batch_idx % 100 != 99:
+                _, summary = sess.run([train_step, merged_summary_op],
+                                      feed_dict={x: batch["x"],
+                                                 y_: batch["y"],
+                                                 keep_prob: 0.5})
+                summary_writer.add_summary(summary, step)
+            else:
+                run_options = tf.RunOptions(
+                    trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+                _, summary = sess.run([train_step, merged_summary_op],
+                                      feed_dict={x: batch["x"],
+                                                 y_: batch["y"],
+                                                 keep_prob: 0.5},
+                                      options=run_options,
+                                      run_metadata=run_metadata)
+                summary_writer.add_run_metadata(run_metadata, 'step%d' % step)
+                summary_writer.add_summary(summary, step)
         valid_acc, = sess.run([accuracy],
                               feed_dict={x: valid["x"],
                                          y_: valid["y"],

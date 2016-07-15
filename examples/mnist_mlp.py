@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import tf_utils as tfu
+import tfu
 import du
 
 train, valid, test = du.tasks.image_tasks.mnist("float32")

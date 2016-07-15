@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import tf_utils as tfu
+import tfu
 
 data = {"x": np.array([[0, 0],
                        [0, 1],
