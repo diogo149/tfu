@@ -12,6 +12,8 @@ dependencies
 
 * optional
 
+  * `du <www.github.com/diogo149/du>`
+
 * development
 
   * nose
