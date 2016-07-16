@@ -115,6 +115,33 @@ def get_shape_symbolic(tensor):
     return res
 
 
+def get_by_name(name, collection=None):
+    """
+    name:
+    if a string, look for a substring
+    if a list, matches if it is a subsequence of a name split by "/"
+    """
+    # TODO do we want this to work on regexes instead of exact string matches
+    if collection is None:
+        collection = tf.GraphKeys.VARIABLES
+    coll = tf.get_collection(collection)
+    if isinstance(name, six.string_types):
+        return [var for var in coll if name in var.name]
+    elif isinstance(name, list):
+        res = []
+        for var in coll:
+            name_list = var.name.split("/")
+            for subname in name:
+                if subname not in name_list:
+                    break
+                name_list = name_list[name_list.index(subname) + 1:]
+            else:
+                res.append(var)
+        return res
+    else:
+        raise ValueError("wrong name type: %s" % name)
+
+
 def dimshuffle(tensor, pattern):
     """
     similar to theano's dimshuffle
@@ -170,6 +197,16 @@ def flatten(tensor, outdim=1):
     return smart_reshape(tensor, shape[:outdim - 1] + [remaining_shape])
 
 
+def initialize_uninitialized_variables(session):
+    var_list = tf.all_variables()
+    init_list = []
+    for var in var_list:
+        if not session.run(tf.is_variable_initialized(var)):
+            init_list.append(var.initializer)
+    session.run(tf.group(*init_list))
+
+
+@base.hooked
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
         num_inputs = get_shape_values(tensor)[-1]
@@ -183,6 +220,7 @@ def linear(name, tensor, num_units):
         return tf.matmul(tensor, W)
 
 
+@base.hooked
 def add_bias(name, tensor):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[-1]
@@ -194,11 +232,13 @@ def add_bias(name, tensor):
         return tensor + b
 
 
+@base.hooked
 def affine(name, tensor, num_units):
     with tf.variable_scope(name):
         return add_bias("bias", linear("linear", tensor, num_units))
 
 
+@base.hooked
 def conv2d(name,
            tensor,
            num_filters,
@@ -244,6 +284,7 @@ def conv2d(name,
                             name=name)
 
 
+@base.hooked
 def max_pool(tensor,
              ksize,
              strides=None,
@@ -264,6 +305,7 @@ def max_pool(tensor,
                           name=name)
 
 
+@base.hooked
 def batch_normalization(name, tensor, epsilon=1e-4):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[1]
@@ -292,6 +334,7 @@ def batch_normalization(name, tensor, epsilon=1e-4):
                                          variance_epsilon=epsilon)
 
 
+@base.hooked
 def rnn_reduce(name,
                rnn_fn,
                tensors,
@@ -311,6 +354,7 @@ def rnn_reduce(name,
     return outputs
 
 
+@base.hooked
 def simple_rnn_step(tensors, state):
     # TODO have different fn to also precompute input
     with tf.variable_scope("simple_rnn"):
@@ -319,11 +363,18 @@ def simple_rnn_step(tensors, state):
         assert is_tensor(x)
         assert is_tensor(h)
         num_units = get_shape_values(h)[-1]
-        return tf.tanh(add_bias("bias",
-                                linear("x_to_h", x, num_units) +
-                                linear("h_to_h", h, num_units)))
+        logit = add_bias("bias",
+                         linear("x_to_h", x, num_units) +
+                         linear("h_to_h", h, num_units))
+
+        @base.hooked
+        def nonlinearity(logit):
+            return tf.tanh(logit)
+
+        return nonlinearity(logit=logit)
 
 
+@base.hooked
 def lstm_step(tensors, state):
     # TODO group linear operations for more efficiency
     with tf.variable_scope("lstm"):
@@ -356,10 +407,12 @@ def lstm_step(tensors, state):
         return {"h": new_h, "c": new_c}
 
 
+@base.hooked
 def binary_cross_entropy(pred, target):
     return -(target * tf.log(pred) + (1 - target) * tf.log(1 - pred))
 
 
+@base.hooked
 def categorical_cross_entropy(pred, target, axis=1):
     if target.dtype == tf.int64:
         num_targets = get_shape_values(pred)[axis]
@@ -371,6 +424,7 @@ def categorical_cross_entropy(pred, target, axis=1):
                           reduction_indices=[axis])
 
 
+@base.hooked
 def softmax_cross_entropy_with_logits(pred_logits, target, axis=1):
     if ndim(pred_logits) == 2 and axis == 1:
         if target.dtype in {tf.int32, tf.int64}:
@@ -387,12 +441,14 @@ def softmax_cross_entropy_with_logits(pred_logits, target, axis=1):
         return categorical_cross_entropy(pred=pred, labels=target)
 
 
+@base.hooked
 def binary_accuracy(pred, target):
     return tf.cast(tf.equal(target,
                             tf.cast(pred > 0.5, pred.dtype)),
                    pred.dtype)
 
 
+@base.hooked
 def categorical_accuracy(pred, target, axis=1):
     if target.dtype != tf.int64:
         # NOTE: assuming that it is one-hot encoded if not int64
@@ -400,30 +456,3 @@ def categorical_accuracy(pred, target, axis=1):
     class_preds = tf.argmax(pred, dimension=axis)
     return tf.cast(tf.equal(class_preds, target),
                    pred.dtype)
-
-
-def get_by_name(name, collection=None):
-    """
-    name:
-    if a string, look for a substring
-    if a list, matches if it is a subsequence of a name split by "/"
-    """
-    # TODO do we want this to work on regexes instead of exact string matches
-    if collection is None:
-        collection = tf.GraphKeys.VARIABLES
-    coll = tf.get_collection(collection)
-    if isinstance(name, six.string_types):
-        return [var for var in coll if name in var.name]
-    elif isinstance(name, list):
-        res = []
-        for var in coll:
-            name_list = var.name.split("/")
-            for subname in name:
-                if subname not in name_list:
-                    break
-                name_list = name_list[name_list.index(subname) + 1:]
-            else:
-                res.append(var)
-        return res
-    else:
-        raise ValueError("wrong name type: %s" % name)
