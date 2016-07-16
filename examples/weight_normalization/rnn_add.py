@@ -43,7 +43,6 @@ v = add_task_minibatch(batch_size=BATCH_SIZE * 25,
                        dtype="float32")
 
 tfu.sequentially_initialize_all_variables(sess)
-# sess.run(tf.initialize_all_variables())
 
 # train network
 try:
