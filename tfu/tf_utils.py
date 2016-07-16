@@ -206,6 +206,12 @@ def initialize_uninitialized_variables(session):
     session.run(tf.group(*init_list))
 
 
+def sequentially_initialize_all_variables(session):
+    var_list = tf.all_variables()
+    for var in var_list:
+        session.run(var.initializer)
+
+
 @base.hooked
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
