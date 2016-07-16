@@ -21,6 +21,7 @@ with tf.variable_scope("model",
     h = x
     h = tf.transpose(h, perm=(1, 0, 2))
     init_state = tf.zeros(shape=(1, NUM_HIDDEN))
+    tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
     outputs = tfu.rnn_reduce("rnn",
                              tfu.simple_rnn_step,
                              [h],
