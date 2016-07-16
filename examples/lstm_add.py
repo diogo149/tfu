@@ -22,10 +22,11 @@ with tf.variable_scope("model",
     h = tf.transpose(h, perm=(1, 0, 2))
     init_state = {"c": tf.zeros(shape=(1, NUM_HIDDEN)),
                   "h": tf.zeros(shape=(1, NUM_HIDDEN))}
-    outputs = tfu.rnn_reduce("rnn",
-                             tfu.lstm_step,
-                             [h],
-                             init_state)
+    with tfu.temporary_hook(tfu.inits.set_forget_bias_init(2.0)):
+        outputs = tfu.rnn_reduce("rnn",
+                                 tfu.lstm_step,
+                                 [h],
+                                 init_state)
     h = outputs[-1]["h"]
     h = tfu.affine("final_dense", h, num_units=1)
     y = h
