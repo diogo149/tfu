@@ -3,7 +3,7 @@ import six
 import numpy as np
 import tensorflow as tf
 
-from . import hooks
+from . import base
 
 # ############################## smart reducing ##############################
 
@@ -173,22 +173,24 @@ def flatten(tensor, outdim=1):
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
         num_inputs = get_shape_values(tensor)[-1]
-        W = hooks.get_variable(name="W",
-                               shape=(num_inputs, num_units),
-                               dtype=tensor.dtype,
-                               collections=[tf.GraphKeys.VARIABLES,
-                                            tf.GraphKeys.WEIGHTS])
+        W = base.get_variable(name="W",
+                              shape=(num_inputs, num_units),
+                              dtype=tensor.dtype,
+                              collections=[tf.GraphKeys.VARIABLES,
+                                           tf.GraphKeys.WEIGHTS],
+                              in_axes=[0],
+                              out_axes=[1])
         return tf.matmul(tensor, W)
 
 
 def add_bias(name, tensor):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[-1]
-        b = hooks.get_variable(name="b",
-                               shape=(num_units,),
-                               dtype=tensor.dtype,
-                               collections=[tf.GraphKeys.VARIABLES,
-                                            tf.GraphKeys.BIASES])
+        b = base.get_variable(name="b",
+                              shape=(num_units,),
+                              dtype=tensor.dtype,
+                              collections=[tf.GraphKeys.VARIABLES,
+                                           tf.GraphKeys.BIASES])
         return tensor + b
 
 
@@ -211,22 +213,26 @@ def conv2d(name,
             strides = (1,) + strides + (1,)
             num_channels = get_shape_values(tensor)[3]
             filter_shape = filter_size + (num_channels, num_filters)
-            W = hooks.get_variable(name="W",
-                                   shape=filter_shape,
-                                   dtype=tensor.dtype,
-                                   collections=[tf.GraphKeys.VARIABLES,
-                                                tf.GraphKeys.WEIGHTS])
+            W = base.get_variable(name="W",
+                                  shape=filter_shape,
+                                  dtype=tensor.dtype,
+                                  collections=[tf.GraphKeys.VARIABLES,
+                                               tf.GraphKeys.WEIGHTS],
+                                  in_axes=[2],
+                                  out_axes=[3])
         elif data_format == "NCHW":
             # TODO are these right?
             strides = (1, 1) + strides
             num_channels = get_shape_values(tensor)[1]
             filter_shape = filter_size + (num_channels, num_filters)
             # filter_shape = (num_channels,) + filter_size + (num_filters, )
-            W = hooks.get_variable(name="W",
-                                   shape=filter_shape,
-                                   dtype=tensor.dtype,
-                                   collections=[tf.GraphKeys.VARIABLES,
-                                                tf.GraphKeys.WEIGHTS])
+            W = base.get_variable(name="W",
+                                  shape=filter_shape,
+                                  dtype=tensor.dtype,
+                                  collections=[tf.GraphKeys.VARIABLES,
+                                               tf.GraphKeys.WEIGHTS],
+                                  in_axes=[2],
+                                  out_axes=[3])
         else:
             raise ValueError
 
@@ -261,19 +267,19 @@ def max_pool(tensor,
 def batch_normalization(name, tensor, epsilon=1e-4):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[1]
-        beta = hooks.get_variable("beta",
+        beta = base.get_variable("beta",
+                                 shape=[num_units],
+                                 dtype=tensor.dtype,
+                                 initializer=tf.constant_initializer(0.0),
+                                 collections=[tf.GraphKeys.VARIABLES,
+                                              tf.GraphKeys.BIASES,
+                                              "bn_beta"])
+        gamma = base.get_variable("gamma",
                                   shape=[num_units],
                                   dtype=tensor.dtype,
-                                  initializer=tf.constant_initializer(0.0),
+                                  initializer=tf.constant_initializer(1.0),
                                   collections=[tf.GraphKeys.VARIABLES,
-                                               tf.GraphKeys.BIASES,
-                                               "bn_beta"])
-        gamma = hooks.get_variable("gamma",
-                                   shape=[num_units],
-                                   dtype=tensor.dtype,
-                                   initializer=tf.constant_initializer(1.0),
-                                   collections=[tf.GraphKeys.VARIABLES,
-                                                "bn_gamma"])
+                                               "bn_gamma"])
         mean, variance = tf.nn.moments(x=tensor,
                                        axes=[dim for dim in range(ndim(tensor))
                                              if dim != 1],
