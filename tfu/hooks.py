@@ -1,4 +1,7 @@
+import tensorflow as tf
+
 from . import base
+from . import tf_utils
 
 
 def default_kwargs(kwargs):
@@ -11,7 +14,7 @@ def default_kwargs(kwargs):
     return inner
 
 
-def default_kwargs(kwargs, key):
+def default_kwargs_dsl(kwargs, key):
     return base.filter_dsl(default_kwargs(kwargs), key=key)
 
 
@@ -27,3 +30,19 @@ def override_kwargs(kwargs):
 
 def override_kwargs_dsl(kwargs, key):
     return base.filter_dsl(override_kwargs(kwargs), key=key)
+
+
+def auto_initialize_variables(session):
+    """
+    NOTE: this will only initialize tfu variables, not external ones
+    (eg. Adam state)
+    """
+
+    def hook(hs):
+        res = hs()
+        if (tf_utils.is_variable(res) and
+                not session.run(tf.is_variable_initialized(res))):
+            session.run(res.initializer)
+        return res
+
+    return base.filter_dsl(hook, key="get_variable")
