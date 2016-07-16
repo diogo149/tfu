@@ -1,6 +1,9 @@
 import functools
+import six
 import numpy as np
 import tensorflow as tf
+
+from . import hooks
 
 # ############################## smart reducing ##############################
 
@@ -170,22 +173,22 @@ def flatten(tensor, outdim=1):
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
         num_inputs = get_shape_values(tensor)[-1]
-        W = tf.get_variable(name="W",
-                            shape=(num_inputs, num_units),
-                            dtype=tensor.dtype,
-                            collections=[tf.GraphKeys.VARIABLES,
-                                         tf.GraphKeys.WEIGHTS])
+        W = hooks.get_variable(name="W",
+                               shape=(num_inputs, num_units),
+                               dtype=tensor.dtype,
+                               collections=[tf.GraphKeys.VARIABLES,
+                                            tf.GraphKeys.WEIGHTS])
         return tf.matmul(tensor, W)
 
 
 def add_bias(name, tensor):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[-1]
-        b = tf.get_variable(name="b",
-                            shape=(num_units,),
-                            dtype=tensor.dtype,
-                            collections=[tf.GraphKeys.VARIABLES,
-                                         tf.GraphKeys.BIASES])
+        b = hooks.get_variable(name="b",
+                               shape=(num_units,),
+                               dtype=tensor.dtype,
+                               collections=[tf.GraphKeys.VARIABLES,
+                                            tf.GraphKeys.BIASES])
         return tensor + b
 
 
@@ -208,22 +211,22 @@ def conv2d(name,
             strides = (1,) + strides + (1,)
             num_channels = get_shape_values(tensor)[3]
             filter_shape = filter_size + (num_channels, num_filters)
-            W = tf.get_variable(name="W",
-                                shape=filter_shape,
-                                dtype=tensor.dtype,
-                                collections=[tf.GraphKeys.VARIABLES,
-                                             tf.GraphKeys.WEIGHTS])
+            W = hooks.get_variable(name="W",
+                                   shape=filter_shape,
+                                   dtype=tensor.dtype,
+                                   collections=[tf.GraphKeys.VARIABLES,
+                                                tf.GraphKeys.WEIGHTS])
         elif data_format == "NCHW":
             # TODO are these right?
             strides = (1, 1) + strides
             num_channels = get_shape_values(tensor)[1]
             filter_shape = filter_size + (num_channels, num_filters)
             # filter_shape = (num_channels,) + filter_size + (num_filters, )
-            W = tf.get_variable(name="W",
-                                shape=filter_shape,
-                                dtype=tensor.dtype,
-                                collections=[tf.GraphKeys.VARIABLES,
-                                             tf.GraphKeys.WEIGHTS])
+            W = hooks.get_variable(name="W",
+                                   shape=filter_shape,
+                                   dtype=tensor.dtype,
+                                   collections=[tf.GraphKeys.VARIABLES,
+                                                tf.GraphKeys.WEIGHTS])
         else:
             raise ValueError
 
@@ -258,19 +261,19 @@ def max_pool(tensor,
 def batch_normalization(name, tensor, epsilon=1e-4):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[1]
-        beta = tf.get_variable("beta",
-                               shape=[num_units],
-                               dtype=tensor.dtype,
-                               initializer=tf.constant_initializer(0.0),
-                               collections=[tf.GraphKeys.VARIABLES,
-                                            tf.GraphKeys.BIASES,
-                                            "bn_beta"])
-        gamma = tf.get_variable("gamma",
-                                shape=[num_units],
-                                dtype=tensor.dtype,
-                                initializer=tf.constant_initializer(1.0),
-                                collections=[tf.GraphKeys.VARIABLES,
-                                             "bn_gamma"])
+        beta = hooks.get_variable("beta",
+                                  shape=[num_units],
+                                  dtype=tensor.dtype,
+                                  initializer=tf.constant_initializer(0.0),
+                                  collections=[tf.GraphKeys.VARIABLES,
+                                               tf.GraphKeys.BIASES,
+                                               "bn_beta"])
+        gamma = hooks.get_variable("gamma",
+                                   shape=[num_units],
+                                   dtype=tensor.dtype,
+                                   initializer=tf.constant_initializer(1.0),
+                                   collections=[tf.GraphKeys.VARIABLES,
+                                                "bn_gamma"])
         mean, variance = tf.nn.moments(x=tensor,
                                        axes=[dim for dim in range(ndim(tensor))
                                              if dim != 1],
@@ -311,8 +314,8 @@ def simple_rnn_step(tensors, state):
         assert is_tensor(h)
         num_units = get_shape_values(h)[-1]
         return tf.tanh(add_bias("bias",
-                                tf.linear("x_to_h", x, num_units) +
-                                tf.linear("h_to_h", h, num_units)))
+                                linear("x_to_h", x, num_units) +
+                                linear("h_to_h", h, num_units)))
 
 
 def lstm_step(tensors, state):
@@ -391,3 +394,30 @@ def categorical_accuracy(pred, target, axis=1):
     class_preds = tf.argmax(pred, dimension=axis)
     return tf.cast(tf.equal(class_preds, target),
                    pred.dtype)
+
+
+def get_by_name(name, collection=None):
+    """
+    name:
+    if a string, look for a substring
+    if a list, matches if it is a subsequence of a name split by "/"
+    """
+    # TODO do we want this to work on regexes instead of exact string matches
+    if collection is None:
+        collection = tf.GraphKeys.VARIABLES
+    coll = tf.get_collection(collection)
+    if isinstance(name, six.string_types):
+        return [var for var in coll if name in var.name]
+    elif isinstance(name, list):
+        res = []
+        for var in coll:
+            name_list = var.name.split("/")
+            for subname in name:
+                if subname not in name_list:
+                    break
+                name_list = name_list[name_list.index(subname) + 1:]
+            else:
+                res.append(var)
+        return res
+    else:
+        raise ValueError("wrong name type: %s" % name)

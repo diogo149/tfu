@@ -11,5 +11,8 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2016 Diogo Almeida"
 
 
-from .hooks import *
+from .base import *
 from .tf_utils import *
+
+from . import hooks
+from . import inits

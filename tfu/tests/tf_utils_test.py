@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import nose.tools as nt
-import tf_utils as tfu
+import tfu
 
 
 def test_dimshuffle():
