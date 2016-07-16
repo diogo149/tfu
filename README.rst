@@ -12,7 +12,7 @@ dependencies
 
 * optional
 
-  * `du <www.github.com/diogo149/du>`_
+  * `du <https://github.com/diogo149/du>`_
 
 * development
 
