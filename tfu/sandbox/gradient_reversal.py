@@ -3,7 +3,7 @@ import tensorflow as tf
 
 @tf.RegisterGradient("GradientReversal")
 def _gradient_reversal_grad(unused_op, grad):
-    return tf.neg(grad)
+    return [tf.neg(grad)]
 
 
 def gradient_reversal(tensor):
