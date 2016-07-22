@@ -443,6 +443,8 @@ def softmax_cross_entropy_with_logits(pred_logits, target, axis=1):
                 labels=target)
     else:
         # TODO could reshape and use built-in ops
+        # TODO make softmax that takes in axis
+        assert False
         pred = tf.nn.softmax(pred_logits)
         return categorical_cross_entropy(pred=pred, target=target)
 
