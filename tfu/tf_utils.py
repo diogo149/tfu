@@ -212,6 +212,20 @@ def sequentially_initialize_all_variables(session):
         session.run(var.initializer)
 
 
+def dot(a, b, **kwargs):
+    """
+    wrapper around tf.matmul to take non-matrix tensors
+    """
+    assert ndim(a) >= 1
+    assert ndim(b) == 2  # TODO implement this
+    last_shape = get_shape_symbolic(a)[-1]
+    tmp_a = tf.reshape(a, [-1, last_shape])
+    res = tf.matmul(tmp_a, b)
+    res_shape = (get_shape_symbolic(a)[:-1] +
+                 [get_shape_symbolic(b)[1]])
+    return smart_reshape(res, res_shape)
+
+
 @base.hooked
 def linear(name, tensor, num_units):
     with tf.variable_scope(name):
@@ -223,7 +237,7 @@ def linear(name, tensor, num_units):
                                            tf.GraphKeys.WEIGHTS],
                               in_axes=[0],
                               out_axes=[1])
-        return tf.matmul(tensor, W)
+        return dot(tensor, W)
 
 
 @base.hooked
@@ -366,8 +380,8 @@ def simple_rnn_step(tensors, state):
     with tf.variable_scope("simple_rnn"):
         x, = tensors
         h = state
-        assert is_tensor(x)
-        assert is_tensor(h)
+        assert is_symbolic(x)
+        assert is_symbolic(h)
         num_units = get_shape_values(h)[-1]
         logit = add_bias("bias",
                          linear("x_to_h", x, num_units) +
@@ -387,9 +401,9 @@ def lstm_step(tensors, state):
         x, = tensors
         h = state["h"]
         c = state["c"]
-        assert is_tensor(x)
-        assert is_tensor(h)
-        assert is_tensor(c)
+        assert is_symbolic(x)
+        assert is_symbolic(h)
+        assert is_symbolic(c)
         num_units = get_shape_values(h)[-1]
         assert get_shape_values(c)[-1] == num_units
         forget_logit = add_bias("forget_bias",
