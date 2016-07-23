@@ -57,7 +57,9 @@ def is_variable(o):
 
 
 def is_symbolic(o):
-    return is_tensor(o) or is_variable(o)
+    return (is_tensor(o) or
+            is_variable(o) or
+            isinstance(o, tf.IndexedSlices))
 
 
 def smart_reshape(tensor, shape, name=None):
