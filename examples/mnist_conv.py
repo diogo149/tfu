@@ -35,7 +35,7 @@ with tf.variable_scope("mlp",
                    # strides=(2, 2),
                    data_format=DATA_FORMAT)
     h = tf.nn.relu(h)
-    h = tfu.max_pool(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.max_pool2d(h, (2, 2), data_format=DATA_FORMAT)
     h = tfu.conv2d("conv2",
                    h,
                    num_filters=32,
@@ -43,7 +43,7 @@ with tf.variable_scope("mlp",
                    # strides=(2, 2),
                    data_format=DATA_FORMAT)
     h = tf.nn.relu(h)
-    h = tfu.max_pool(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.max_pool2d(h, (2, 2), data_format=DATA_FORMAT)
     h = tfu.flatten(h, 2)
     h = tfu.affine("fc1", h, 256)
     h = tf.nn.relu(h)

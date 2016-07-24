@@ -307,12 +307,12 @@ def conv2d(name,
 
 
 @base.hooked
-def max_pool(tensor,
-             ksize,
-             strides=None,
-             padding="SAME",
-             data_format="NHWC",
-             name=None):
+def max_pool2d(tensor,
+               ksize,
+               strides=None,
+               padding="SAME",
+               data_format="NHWC",
+               name=None):
     if strides is None:
         strides = ksize
     assert len(strides) == len(ksize) == 2
