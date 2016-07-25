@@ -328,6 +328,40 @@ def max_pool2d(tensor,
 
 
 @base.hooked
+def avg_pool2d(tensor,
+               ksize,
+               strides=None,
+               padding="SAME",
+               data_format="NHWC",
+               name=None):
+    if strides is None:
+        strides = ksize
+    assert len(strides) == len(ksize) == 2
+    assert data_format == "NHWC"
+    ksize = (1,) + ksize + (1,)
+    strides = (1,) + strides + (1,)
+    return tf.nn.avg_pool(value=tensor,
+                          ksize=ksize,
+                          strides=strides,
+                          padding=padding,
+                          data_format=data_format,
+                          name=name)
+
+
+@base.hooked
+def global_avg_pool2d(tensor, data_format="NHWC", name=None):
+    assert data_format == "NHWC"
+    ksize = [1] + get_shape_symbolic(tensor)[1:3] + [1]
+    res = tf.nn.avg_pool(value=tensor,
+                         ksize=ksize,
+                         strides=ksize,
+                         padding="VALID",
+                         data_format=data_format,
+                         name=name)
+    return tf.squeeze(res, squeeze_dims=[1, 2])
+
+
+@base.hooked
 def batch_normalization(name, tensor, epsilon=1e-4):
     with tf.variable_scope(name):
         num_units = get_shape_values(tensor)[1]
