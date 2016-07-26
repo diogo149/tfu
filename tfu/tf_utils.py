@@ -261,6 +261,36 @@ def affine(name, tensor, num_units):
 
 
 @base.hooked
+def multi_linear(names, tensor, num_units):
+    with tf.variable_scope("multi_linear"):
+        if isinstance(num_units, int):
+            num_units = [num_units] * len(names)
+        assert len(num_units) == len(names)
+        num_inputs = get_shape_values(tensor)[-1]
+        Ws = []
+        for name, n in zip(names, num_units):
+            with tf.variable_scope(name):
+                W = base.get_variable(name="W",
+                                      shape=(num_inputs, n),
+                                      dtype=tensor.dtype,
+                                      collections=[tf.GraphKeys.VARIABLES,
+                                                   tf.GraphKeys.WEIGHTS],
+                                      in_axes=[0],
+                                      out_axes=[1])
+                Ws.append(W)
+        W_concat = tf.concat(concat_dim=1, values=Ws)
+        combined = dot(tensor, W_concat)
+        results = []
+        begin = [0] * ndim(combined)
+        size = [-1] * ndim(combined)
+        for n in num_units:
+            size[-1] = n
+            res = tf.slice(combined, begin, size)
+            results.append(res)
+            begin[-1] += n
+        return results
+
+@base.hooked
 def conv2d(name,
            tensor,
            num_filters,
