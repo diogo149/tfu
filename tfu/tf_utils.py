@@ -290,6 +290,17 @@ def multi_linear(names, tensor, num_units):
             begin[-1] += n
         return results
 
+
+@base.hooked
+def multi_affine(names, tensor, num_units):
+    results = multi_linear(names, tensor, num_units)
+    new_results = []
+    for name, result in zip(names, results):
+        with tf.variable_scope(name):
+            new_results.append(add_bias("bias", result))
+    return new_results
+
+
 @base.hooked
 def conv2d(name,
            tensor,
