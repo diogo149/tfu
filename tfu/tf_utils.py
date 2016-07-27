@@ -505,6 +505,29 @@ def lstm_step(tensors, state):
 
 
 @base.hooked
+def simple_rnn_layer(name, tensor, state):
+    with tf.variable_scope(name):
+        x = tensor
+        h = state
+        assert is_symbolic(x)
+        assert is_symbolic(h)
+        num_units = get_shape_values(h)[-1]
+        z = affine("x_to_h", x, num_units=num_units)
+
+        @base.hooked
+        def nonlinearity(logit):
+            return tf.tanh(logit)
+
+        def _step(tensors, state):
+            z_, = tensors
+            h_ = state
+            logit = z_ + linear("h_to_h", h_, num_units=num_units)
+            return nonlinearity(logit=logit)
+
+        outputs = rnn_reduce("rnn", _step, [z], h)
+        return outputs
+
+@base.hooked
 def binary_cross_entropy(pred, target):
     return -(target * tf.log(pred) + (1 - target) * tf.log(1 - pred))
 
