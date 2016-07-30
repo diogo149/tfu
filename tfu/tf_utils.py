@@ -117,6 +117,19 @@ def get_shape_symbolic(tensor):
     return res
 
 
+def get_tensors(graph=None):
+    """
+    returns all tensors in a graph
+    """
+    if graph is None:
+        graph = tf.get_default_graph()
+    tensors = set()
+    for op in graph.get_operations():
+        tensors.update(op.inputs)
+        tensors.update(op.outputs)
+    return tensors
+
+
 def get_by_name(name, collection=None):
     """
     name:
