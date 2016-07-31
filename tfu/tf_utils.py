@@ -293,6 +293,23 @@ def add_bias(name, tensor, axis=-1):
             return tensor + dimshuffle(b, pattern)
 
 
+@base.hooked
+def learned_scaling(name, tensor, axis=-1):
+    with tf.variable_scope(name):
+        # TODO allow for multiple axes
+        num_units = get_shape_values(tensor)[axis]
+        scale = base.get_variable(name="scale",
+                                  shape=(num_units,),
+                                  dtype=tensor.dtype,
+                                  # TODO what collections should this have
+                                  collections=[tf.GraphKeys.VARIABLES])
+        if axis == -1:
+            return tensor * scale
+        else:
+            pattern = ["x"] * ndim(tensor)
+            pattern[axis] = 0
+            return tensor + dimshuffle(scale, pattern)
+
 
 @base.hooked
 def affine(name, tensor, num_units):
