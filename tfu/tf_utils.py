@@ -157,6 +157,16 @@ def get_by_name(name, collection=None):
         raise ValueError("wrong name type: %s" % name)
 
 
+def tensor_to_variable(tensor):
+    """
+    converts a read tensor to its corresponding variable
+    """
+    assert tensor.name.endswith("/read:0")
+    var, = get_by_name(tensor.name[:-len("/read:0")])
+    assert is_variable(var)
+    return var
+
+
 def dimshuffle(tensor, pattern):
     """
     similar to theano's dimshuffle
