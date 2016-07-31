@@ -227,6 +227,16 @@ def sequentially_initialize_all_variables(session):
         session.run(var.initializer)
 
 
+def list_reduce_mean(tensors):
+    assert len(tensors) > 0
+    if len(tensors) == 1:
+        return tensors[0]
+    else:
+        # TODO benchmark different indicies to do this over
+        packed = tf.pack(tensors, axis=0)
+        return tf.reduce_mean(packed, reduction_indices=[0])
+
+
 def dot(a, b, **kwargs):
     """
     wrapper around tf.matmul to take non-matrix tensors
