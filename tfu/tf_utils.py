@@ -276,15 +276,22 @@ def linear(name, tensor, num_units):
 
 
 @base.hooked
-def add_bias(name, tensor):
+def add_bias(name, tensor, axis=-1):
     with tf.variable_scope(name):
-        num_units = get_shape_values(tensor)[-1]
+        # TODO allow for multiple axes
+        num_units = get_shape_values(tensor)[axis]
         b = base.get_variable(name="b",
                               shape=(num_units,),
                               dtype=tensor.dtype,
                               collections=[tf.GraphKeys.VARIABLES,
                                            tf.GraphKeys.BIASES])
-        return tensor + b
+        if axis == -1:
+            return tensor + b
+        else:
+            pattern = ["x"] * ndim(tensor)
+            pattern[axis] = 0
+            return tensor + dimshuffle(b, pattern)
+
 
 
 @base.hooked
