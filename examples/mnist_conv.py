@@ -75,9 +75,10 @@ accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 
 sess.run(tf.initialize_all_variables())
 
-train_gen = to_minibatches(train, 50)
+train_gen = to_minibatches(train, 500)
 for _ in range(10):
-    for i in range(1000):
-        batch = train_gen.next()
-        train_step.run(feed_dict={x: batch["x"], y_: batch["y"]})
-    print(accuracy.eval(feed_dict={x: valid["x"], y_: valid["y"]}))
+    with du.timer("epoch"):
+        for i in range(100):
+            batch = train_gen.next()
+            train_step.run(feed_dict={x: batch["x"], y_: batch["y"]})
+        print(accuracy.eval(feed_dict={x: valid["x"], y_: valid["y"]}))
