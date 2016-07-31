@@ -17,10 +17,10 @@ h = tfu.flatten(x, 2)
 
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
-    h = tfu.affine("fc1", h, 512)
+    h = tfu.linear("fc1", h, 512)
     h = tfu.batch_normalization("bn1", h)
     h = tf.nn.relu(h)
-    h = tfu.affine("fc2", h, 512)
+    h = tfu.linear("fc2", h, 512)
     h = tfu.batch_normalization("bn2", h)
     h = tf.nn.relu(h)
     h = tfu.affine("logit", h, 10)
