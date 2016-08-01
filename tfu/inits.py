@@ -37,6 +37,24 @@ def set_weight_init(weight_init, **filter_dsl_kwargs):
                            **filter_dsl_kwargs)
 
 
+def random_normal(*args, **kwargs):
+    init = tf.random_normal_initializer(*args, **kwargs)
+
+    def inner(*args, **kwargs):
+        return init
+
+    return inner
+
+
+def random_uniform(*args, **kwargs):
+    init = tf.random_uniform_initializer(*args, **kwargs)
+
+    def inner(*args, **kwargs):
+        return init
+
+    return inner
+
+
 def xavier_magnitude(shape, in_axes, out_axes):
     shape = np.array(shape)
     other_axes_size = np.prod([s
