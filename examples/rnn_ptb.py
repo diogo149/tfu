@@ -13,6 +13,8 @@ LENGTH = 128
 x = tf.placeholder(tf.float32, shape=[None, LENGTH, 50])
 y_ = tf.placeholder(tf.float32, shape=[None, LENGTH, 50])
 
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
+
 with tf.variable_scope("model",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
     h = x
@@ -23,11 +25,7 @@ with tf.variable_scope("model",
                                 trainable=False)
     init_state = tf.identity(rnn_state)
     init_state.set_shape([None, NUM_HIDDEN])
-    tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
-    outputs = tfu.rnn_reduce("rnn",
-                             tfu.simple_rnn_step,
-                             [h],
-                             init_state)
+    outputs = tfu.SimpleRNNStep(NUM_HIDDEN).apply_layer("rnn", [h])
     h = tf.pack(outputs)
     h = tfu.affine("final_dense", h, num_units=50)
     h = tf.transpose(h, perm=(1, 0, 2))

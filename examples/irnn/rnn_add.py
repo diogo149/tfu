@@ -15,18 +15,15 @@ sess = tf.InteractiveSession()
 x = tf.placeholder(tf.float32, shape=[None, LENGTH, 2])
 y_ = tf.placeholder(tf.float32, shape=[None, 1])
 
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
 
-with tf.variable_scope("model",
-                       initializer=tf.random_uniform_initializer(-0.05, 0.05)):
+with tf.variable_scope("model"):
     h = x
     h = tf.transpose(h, perm=(1, 0, 2))
     init_state = tf.zeros(shape=(1, NUM_HIDDEN))
     import tfu.sandbox.irnn
     with tfu.temporary_hook(tfu.sandbox.irnn.irnn_hook()):
-        outputs = tfu.rnn_reduce("rnn",
-                                 tfu.simple_rnn_step,
-                                 [h],
-                                 init_state)
+        outputs = tfu.SimpleRNNStep(NUM_HIDDEN).apply_layer("rnn", [h])
     h = outputs[-1]
     h = tfu.affine("final_dense", h, num_units=1)
     y = h
