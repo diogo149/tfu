@@ -38,15 +38,20 @@ class LNSimpleRNNStep(tfu.RNNStep):
         return self.num_units
 
     def call(self, inputs, state):
-        x, = inputs
-        h = state
-        logit = tfu.add_bias(
-            "bias",
-            layer_normalization(tfu.linear("x_to_h", x, self.num_units)) +
-            layer_normalization(tfu.linear("h_to_h", h, self.num_units)))
+        with tf.variable_scope("simple_rnn"):
+            x, = inputs
+            h = state
+            with tf.variable_scope("x_to_h"):
+                x_to_h = tfu.linear("linear", x, self.num_units)
+                x_to_h = layer_normalization("ln", x_to_h)
+            with tf.variable_scope("h_to_h"):
+                h_to_h = tfu.linear("linear", h, self.num_units)
+                h_to_h = layer_normalization("ln", h_to_h)
+            logit = tfu.add_bias("bias", x_to_h + h_to_h)
 
-        @tfu.hooked
-        def nonlinearity(logit):
-            return tf.tanh(logit)
+            @tfu.hooked
+            def nonlinearity(logit):
+                return tf.tanh(logit)
 
-        return nonlinearity(logit=logit)
+            return nonlinearity(logit=logit)
+

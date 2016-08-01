@@ -24,10 +24,10 @@ def irnn_hook(nonlin=tf.nn.relu):
         hs.hooks = [
             tfu.inits.set_weight_init(
                 identity_init,
-                variable_scope=["SimpleRNNStep", "h_to_h"]),
+                variable_scope=["simple_rnn", "h_to_h"]),
             tfu.filter_dsl(replace_nonlinearity,
                            key=["nonlinearity"],
-                           variable_scope=["SimpleRNNStep"]),
+                           variable_scope=["simple_rnn"]),
         ] + hs.hooks
         return hs()
 
