@@ -13,6 +13,8 @@ __copyright__ = "Copyright (c) 2016 Diogo Almeida"
 
 from .base import *
 from .tf_utils import *
+from .rnn_step import *
+from .rnn_steps import *
 
 from . import hooks
 from . import inits
