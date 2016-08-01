@@ -40,26 +40,18 @@ class LSTMStep(RNNStep):
         x, = inputs
         h = state["h"]
         c = state["c"]
-        forget_logit = tf_utils.add_bias(
-            "forget_bias",
-            tf_utils.linear("forget_x", x, self.num_units) +
-            tf_utils.linear("forget_h", h, self.num_units))
-        input_logit = tf_utils.add_bias(
-            "input_bias",
-            tf_utils.linear("input_x", x, self.num_units) +
-            tf_utils.linear("input_h", h, self.num_units))
-        output_logit = tf_utils.add_bias(
-            "output_bias",
-            tf_utils.linear("output_x", x, self.num_units) +
-            tf_utils.linear("output_h", h, self.num_units))
-        update_logit = tf_utils.add_bias(
-            "update_bias",
-            tf_utils.linear("update_x", x, self.num_units) +
-            tf_utils.linear("update_h", h, self.num_units))
-        f = tf.nn.sigmoid(forget_logit)
-        i = tf.nn.sigmoid(input_logit)
-        o = tf.nn.sigmoid(output_logit)
-        u = tf.tanh(update_logit)
+        logits = []
+        for name in ["forget", "input", "output", "update"]:
+            with tf.variable_scope("forget"):
+                logit = tf_utils.add_bias(
+                    "bias",
+                    tf_utils.linear("x_to_h", x, self.num_units) +
+                    tf_utils.linear("h_to_h", h, self.num_units))
+            logits.append(logit)
+        f = tf.nn.sigmoid(logits[0])
+        i = tf.nn.sigmoid(logits[1])
+        o = tf.nn.sigmoid(logits[2])
+        u = tf.tanh(logits[3])
         new_c = f * c + i * u
         new_h = tf.tanh(new_c) * o
         return {"h": new_h, "c": new_c}
