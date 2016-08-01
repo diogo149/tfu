@@ -107,7 +107,7 @@ class RNNStep(object):
             results = ()
             for k, v in sorted(ss.items(), key=lambda x: x[0]):
                 state_ = state[k]
-                results += self.state_to_cell_state(state_, s)
+                results += self.state_to_cell_state(state_, v)
             return results
         else:
             raise ValueError("Incorrect shape specification: %s" % ss)
@@ -186,7 +186,7 @@ class RNNStep(object):
             if evaluation_type == "rnn":
                 outputs, final_cell_state = tf.nn.rnn(
                     cell,
-                    inputs=map(tf.unpack, inputs),
+                    inputs=zip(*map(tf.unpack, inputs)),
                     initial_state=initial_cell_state)
             elif evaluation_type == "dynamic_rnn":
                 outputs, final_cell_state = tf.nn.dynamic_rnn(
