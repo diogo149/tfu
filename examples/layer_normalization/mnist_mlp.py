@@ -16,6 +16,8 @@ y_ = tf.placeholder(tf.int64, shape=[None])
 
 h = tfu.flatten(x, 2)
 
+tfu.add_hook(tfu.hooks.default_kwargs_dsl(kwargs={"include_bias": True},
+                                          key="layer_normalization"))
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
     h = tfu.linear("fc1", h, 512)

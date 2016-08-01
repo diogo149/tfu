@@ -7,7 +7,12 @@ import tensorflow as tf
 import tfu
 
 
-def layer_normalization(name, tensor, epsilon=1e-5):
+@tfu.hooked
+def layer_normalization(name,
+                        tensor,
+                        epsilon=1e-5,
+                        include_bias=False,
+                        include_scale=True):
     # default epsilon taken from
     # https://github.com/ryankiros/layer-norm/blob/master/layers.py
     with tf.variable_scope(name):
@@ -17,8 +22,10 @@ def layer_normalization(name, tensor, epsilon=1e-5):
                   if dim != 0],
             keep_dims=True)
         z = (tensor - mean) / tf.sqrt(variance + epsilon)
-        z = tfu.learned_scaling("scale", z)
-        z = tfu.add_bias("bias", z)
+        if include_scale:
+            z = tfu.learned_scaling("scale", z)
+        if include_bias:
+            z = tfu.add_bias("bias", z)
         return z
 
 
