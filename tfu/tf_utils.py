@@ -319,8 +319,23 @@ def affine(name, tensor, num_units):
         return add_bias("bias", linear("linear", tensor, num_units))
 
 
+def split_axis(tensor, axis, sizes):
+    """
+    splits a tensor along a given axis according to the given sizes
+    """
+    results = []
+    begin = [0] * ndim(tensor)
+    size = [-1] * ndim(tensor)
+    for s in sizes:
+        size[axis] = s
+        res = tf.slice(tensor, begin, size)
+        results.append(res)
+        begin[axis] += s
+    return results
+
+
 @base.hooked
-def multi_linear(names, tensor, num_units):
+def multi_linear(names, tensor, num_units, split_output=True):
     with tf.variable_scope("multi_linear"):
         if isinstance(num_units, int):
             num_units = [num_units] * len(names)
@@ -339,15 +354,10 @@ def multi_linear(names, tensor, num_units):
                 Ws.append(W)
         W_concat = tf.concat(concat_dim=1, values=Ws)
         combined = dot(tensor, W_concat)
-        results = []
-        begin = [0] * ndim(combined)
-        size = [-1] * ndim(combined)
-        for n in num_units:
-            size[-1] = n
-            res = tf.slice(combined, begin, size)
-            results.append(res)
-            begin[-1] += n
-        return results
+        if split_output:
+            return split_axis(combined, axis=-1, sizes=num_units)
+        else:
+            return combined
 
 
 @base.hooked
