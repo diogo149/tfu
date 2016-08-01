@@ -42,9 +42,8 @@ class LNSimpleRNNStep(tfu.RNNStep):
         h = state
         logit = tfu.add_bias(
             "bias",
-            tfu.linear("x_to_h", x, self.num_units) +
-            tfu.linear("h_to_h", h, self.num_units))
-        logit = layer_normalization("ln", logit)
+            layer_normalization(tfu.linear("x_to_h", x, self.num_units)) +
+            layer_normalization(tfu.linear("h_to_h", h, self.num_units)))
 
         @tfu.hooked
         def nonlinearity(logit):
