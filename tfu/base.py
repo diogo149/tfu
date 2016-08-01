@@ -56,10 +56,15 @@ def hooked(fn):
     return inner
 
 
-def add_hook(fn):
+def add_hook(fn, location="outer"):
     # TODO does it ever make sense to have a hook twice?
     assert fn not in HOOKS
-    HOOKS.append(fn)
+    if location == "outer":
+        HOOKS.append(fn)
+    elif location == "inner":
+        HOOKS.insert(0, fn)
+    else:
+        raise ValueError("Invalid hook location: %s" % location)
 
 
 def remove_hook(fn):
@@ -68,9 +73,9 @@ def remove_hook(fn):
 
 
 @contextlib.contextmanager
-def temporary_hook(fn, key=None):
+def temporary_hook(fn, location="outer"):
     try:
-        add_hook(fn)
+        add_hook(fn, location=location)
         yield
     finally:
         remove_hook(fn)
