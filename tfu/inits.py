@@ -137,4 +137,4 @@ def set_forget_bias_init(init_value=0.):
         return hs()
     return base.filter_dsl(inner,
                            key="get_variable",
-                           variable_scope=["lstm", "forget_bias"])
+                           variable_scope=["LSTMStep", "forget", "bias"])
