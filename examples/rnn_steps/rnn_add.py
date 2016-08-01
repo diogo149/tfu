@@ -15,25 +15,19 @@ sess = tf.InteractiveSession()
 x = tf.placeholder(tf.float32, shape=[None, LENGTH, 2])
 y_ = tf.placeholder(tf.float32, shape=[None, 1])
 
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
 
-with tf.variable_scope("model",
-                       initializer=tf.random_normal_initializer(stddev=0.2)):
+with tf.variable_scope("model"):
     h = x
     h = tf.transpose(h, perm=(1, 0, 2))
-    init_state = {"c": tf.zeros(shape=(1, NUM_HIDDEN)),
-                  "h": tf.zeros(shape=(1, NUM_HIDDEN))}
-    with tfu.temporary_hook(tfu.inits.set_forget_bias_init(2.0)):
-        outputs = tfu.rnn_reduce("rnn",
-                                 tfu.lstm_step,
-                                 [h],
-                                 init_state)
-    h = outputs[-1]["h"]
+    outputs = tfu.SimpleRNNStep(NUM_HIDDEN).apply_layer("rnn", [h])
+    h = outputs[-1]
     h = tfu.affine("final_dense", h, num_units=1)
     y = h
 
 mse = tf.reduce_mean(tf.square(y - y_))
 
-train_step = tf.train.AdamOptimizer(learning_rate=1e-2).minimize(mse)
+train_step = tf.train.AdamOptimizer().minimize(mse)
 
 # create validation task
 v = add_task_minibatch(batch_size=BATCH_SIZE * 25,
