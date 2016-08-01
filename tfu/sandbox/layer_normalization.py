@@ -7,7 +7,9 @@ import tensorflow as tf
 import tfu
 
 
-def layer_normalization(name, tensor, epsilon=1e-4):
+def layer_normalization(name, tensor, epsilon=1e-5):
+    # default epsilon taken from
+    # https://github.com/ryankiros/layer-norm/blob/master/layers.py
     with tf.variable_scope(name):
         mean, variance = tf.nn.moments(
             x=tensor,
