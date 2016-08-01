@@ -3,7 +3,6 @@ from "Layer Normalization"
 http://arxiv.org/abs/1607.06450
 """
 
-import numpy as np
 import tensorflow as tf
 import tfu
 
