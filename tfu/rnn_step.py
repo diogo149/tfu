@@ -200,6 +200,19 @@ class RNNStep(object):
 
         return results
 
+    def update_state_op(self, variable_state, new_state, **kwargs):
+        variable_cell_state = self.state_to_cell_state(variable_state)
+        new_cell_state = self.state_to_cell_state(new_state)
+        ops = [tf.assign(vs, ns, **kwargs)
+               for vs, ns in zip(variable_cell_state, new_cell_state)]
+        return tf.group(*ops)
+
+    def reset_state_op(self, variable_state, **kwargs):
+        variable_cell_state = self.state_to_cell_state(variable_state)
+        ops = [tf.assign(vs, tf.zeros_like(vs), **kwargs)
+               for vs in variable_cell_state]
+        return tf.group(*ops)
+
 
 class RNNStepToCell(tf.nn.rnn_cell.RNNCell):
 
