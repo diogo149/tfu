@@ -5,7 +5,7 @@ import du
 import du.tasks.nlp_tasks as nlp_tasks
 
 # hyperparameters
-NUM_HIDDEN = 32
+NUM_HIDDEN = 512
 NUM_EPOCHS = 100
 BATCH_SIZE = 128
 LENGTH = 128
