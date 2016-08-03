@@ -298,19 +298,18 @@ def learned_scaling(name, tensor, axis=-1):
     with tf.variable_scope(name):
         # TODO allow for multiple axes
         num_units = get_shape_values(tensor)[axis]
-        # TODO should this be tf.exp(param) instead of linear
+        # TODO should this be exponential or linear
         scale = base.get_variable(name="scale",
                                   shape=(num_units,),
                                   dtype=tensor.dtype,
                                   # TODO what collections should this have
-                                  initializer=tf.constant_initializer(1.0),
                                   collections=[tf.GraphKeys.VARIABLES])
         if axis == -1:
             return tensor * scale
         else:
             pattern = ["x"] * ndim(tensor)
             pattern[axis] = 0
-            return tensor * dimshuffle(scale, pattern)
+            return tensor * dimshuffle(tf.exp(scale), pattern)
 
 
 @base.hooked
