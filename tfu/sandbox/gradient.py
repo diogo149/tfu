@@ -13,6 +13,7 @@ def ignore_additional_arg(tensor, arg):
         casted = tf.identity(arg)
     else:
         casted = tf.cast(arg, tensor.dtype)
+    # TODO use shape instead of reducing
     return tensor + 0 * tf.reduce_sum(casted)
 
 
