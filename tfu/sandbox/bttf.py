@@ -60,7 +60,7 @@ def backprop_to_the_future_mean(current_mean,
         return out
 
 
-def backprop_to_the_future_mean_updates(loss, alpha1, alpha2=None):
+def raw_backprop_to_the_future_mean_updates(loss, alpha1, alpha2=None):
     if alpha2 is None:
         alpha2 = alpha1
 
@@ -78,14 +78,23 @@ def backprop_to_the_future_mean_updates(loss, alpha1, alpha2=None):
 
     for rm, cms in rm_to_cm.items():
         avg_cm = tfu.list_reduce_mean(cms)
-        updates.append(rm.assign(alpha1 * rm + (1 - alpha1) * avg_cm))
+        updates.append((rm, alpha1 * rm + (1 - alpha1) * avg_cm))
 
     res_to_grad = dict(zip(results, tf.gradients(loss, results)))
     for rg, ress in rg_to_res.items():
         grads = [res_to_grad[res] for res in ress]
         avg_grad = tfu.list_reduce_mean(grads)
-        updates.append(rg.assign(alpha2 * rg + (1 - alpha2) * avg_grad))
+        updates.append((rg, alpha2 * rg + (1 - alpha2) * avg_grad))
 
+    return updates
+
+
+def backprop_to_the_future_mean_updates(loss, alpha1, alpha2=None):
+    raw_updates = raw_backprop_to_the_future_mean_updates(loss, alpha1, alpha2)
+    updates = []
+    with tf.control_dependencies([loss]):
+        for var, update in raw_updates:
+            updates.append(var.assign(update))
     return tf.group(*updates)
 
 # shortcuts
