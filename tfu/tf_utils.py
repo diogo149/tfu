@@ -310,7 +310,7 @@ def learned_scaling(name, tensor, axis=-1):
         else:
             pattern = ["x"] * ndim(tensor)
             pattern[axis] = 0
-            return tensor + dimshuffle(scale, pattern)
+            return tensor * dimshuffle(scale, pattern)
 
 
 @base.hooked
