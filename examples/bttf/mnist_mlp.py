@@ -60,8 +60,7 @@ y_ = tf.placeholder(tf.int64, shape=[None])
 
 h = tfu.flatten(x, 2)
 
-with tf.variable_scope("mlp",
-                       initializer=tf.random_uniform_initializer(-0.05, 0.05)):
+with tf.variable_scope("mlp"):
     h = tfu.linear("fc1", h, 512)
     h = bachelor_normalization("bn1", h)
     h = tf.nn.relu(h)
