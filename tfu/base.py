@@ -102,6 +102,8 @@ def get_variable(name,
     wrapper around tf.get_variable that takes in additional keyword arguments
     as metadata and stores that metadata
     """
+    if initializer is None:
+        initializer = tf.constant_initializer(0.)
     var = tf.get_variable(name=name,
                           shape=shape,
                           dtype=dtype,
