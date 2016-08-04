@@ -60,6 +60,8 @@ y_ = tf.placeholder(tf.int64, shape=[None])
 
 h = tfu.flatten(x, 2)
 
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
+
 with tf.variable_scope("mlp"):
     h = tfu.linear("fc1", h, 512)
     h = bachelor_normalization("bn1", h)
