@@ -304,12 +304,13 @@ def learned_scaling(name, tensor, axis=-1):
                                   dtype=tensor.dtype,
                                   # TODO what collections should this have
                                   collections=[tf.GraphKeys.VARIABLES])
+        scale = tf.exp(scale)
         if axis == -1:
             return tensor * scale
         else:
             pattern = ["x"] * ndim(tensor)
             pattern[axis] = 0
-            return tensor * dimshuffle(tf.exp(scale), pattern)
+            return tensor * dimshuffle(scale, pattern)
 
 
 @base.hooked
