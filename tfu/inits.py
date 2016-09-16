@@ -12,8 +12,10 @@ def scale_inits(scale, **filter_dsl_kwargs):
         if "initializer" in hs.kwargs:
             old_initializer = hs.kwargs["initializer"]
 
-            def inner(shape, dtype):
-                res = old_initializer(shape, dtype)
+            def inner(shape, dtype, partition_info=None):
+                res = old_initializer(shape,
+                                      dtype,
+                                      partition_info=partition_info)
                 return res * scale
 
             hs.kwargs["initializer"] = inner
@@ -113,7 +115,7 @@ def orthogonal(shape, in_axes, out_axes, **_):
     """
     assert len(shape) >= 2
 
-    def inner(shape, dtype):
+    def inner(shape, dtype, partition_info=None):
         # consider all non-out_axes as in_axes
         tmp_out_shape = []
         tmp_in_shape = []

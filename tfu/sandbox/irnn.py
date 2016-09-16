@@ -8,7 +8,7 @@ import tfu
 
 def irnn_hook(nonlin=tf.nn.relu):
     def identity_init(**_):
-        def inner(shape, dtype):
+        def inner(shape, dtype, partition_info=None):
             assert len(shape) == 2
             assert shape[0] == shape[1]
             return np.identity(shape[0])

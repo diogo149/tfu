@@ -97,6 +97,7 @@ def get_variable(name,
                  caching_device=None,
                  partitioner=None,
                  validate_shape=True,
+                 custom_getter=None,
                  **metadata):
     """
     wrapper around tf.get_variable that takes in additional keyword arguments
@@ -113,7 +114,8 @@ def get_variable(name,
                           collections=collections,
                           caching_device=caching_device,
                           partitioner=partitioner,
-                          validate_shape=validate_shape)
+                          validate_shape=validate_shape,
+                          custom_getter=custom_getter)
     metadata.update(dict(
         name=name,
         shape=shape,
