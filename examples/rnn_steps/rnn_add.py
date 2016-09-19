@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import tfu
+import du
 from du.tasks.sequence_tasks import add_task_minibatch
 
 # hyperparameters
@@ -40,16 +41,19 @@ sess.run(tf.initialize_all_variables())
 # train network
 try:
     for i in xrange(1, NUM_EPOCHS + 1):
-        costs = []
-        for j in xrange(NUM_BATCHES):
-            m = add_task_minibatch(batch_size=BATCH_SIZE,
-                                   min_length=LENGTH,
-                                   max_length=LENGTH,
-                                   dtype="float32")
-            cost, _ = sess.run([mse, train_step],
-                               feed_dict={x: m["x"], y_: m["y"]})
-            costs.append(cost)
-        valid_cost, = sess.run([mse], feed_dict={x: v["x"], y_: v["y"]})
-        print "Epoch: %d\tTrain: %.5g\tValid: %.2f" % (i, np.mean(costs), valid_cost)
+        with du.timer("epoch"):
+            costs = []
+            for j in xrange(NUM_BATCHES):
+                m = add_task_minibatch(batch_size=BATCH_SIZE,
+                                       min_length=LENGTH,
+                                       max_length=LENGTH,
+                                       dtype="float32")
+                cost, _ = sess.run([mse, train_step],
+                                   feed_dict={x: m["x"], y_: m["y"]})
+                costs.append(cost)
+            valid_cost, = sess.run([mse], feed_dict={x: v["x"], y_: v["y"]})
+            print "Epoch: %d\tTrain: %.5g\tValid: %.2f" % (i,
+                                                           np.mean(costs),
+                                                           valid_cost)
 except KeyboardInterrupt:
     pass
