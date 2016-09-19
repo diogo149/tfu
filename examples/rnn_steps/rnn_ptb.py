@@ -45,9 +45,10 @@ def model(x, y_, rnn_state):
     update_rnn_state_op = step.update_state_op(rnn_state, outputs[-1])
     return cross_entropy, update_rnn_state_op
 
-cross_entropy, update_rnn_state_op = model(x, y_, rnn_state)
+with tf.variable_scope("model"):
+    cross_entropy, update_rnn_state_op = model(x, y_, rnn_state)
 
-with tf.variable_scope("", reuse=True):
+with tf.variable_scope("model", reuse=True):
     cross_entropy_test, update_rnn_state_op_test = model(
         x_test, y_test, test_state)
 
