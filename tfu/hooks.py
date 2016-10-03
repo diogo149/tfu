@@ -1,7 +1,7 @@
 import tensorflow as tf
 
+from . import utils
 from . import base
-from . import tf_utils
 
 
 def default_kwargs(kwargs):
@@ -40,7 +40,7 @@ def auto_initialize_variables(session):
 
     def hook(hs):
         res = hs()
-        if (tf_utils.is_variable(res) and
+        if (utils.is_variable(res) and
                 not session.run(tf.is_variable_initialized(res))):
             session.run(res.initializer)
         return res

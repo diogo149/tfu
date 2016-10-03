@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from . import utils
 from . import base
 from . import tf_utils
 
@@ -174,10 +175,10 @@ class RNNStep(object):
             # preprocess initial_cell_state for shape
             # by broadcasting 1 dim into batch size
             initial_cell_state = list(initial_cell_state)
-            batch_size = tf_utils.get_shape_symbolic(inputs[0])[1]
+            batch_size = utils.get_shape_symbolic(inputs[0])[1]
             for idx, s in enumerate(initial_cell_state):
-                if tf_utils.get_shape_values(s)[0] == 1:
-                    s_shape = tf_utils.get_shape_symbolic(s)
+                if utils.get_shape_values(s)[0] == 1:
+                    s_shape = utils.get_shape_symbolic(s)
                     s_shape[0] = batch_size
                     zeros = tf.zeros(s_shape, dtype=s.dtype)
                     initial_cell_state[idx] = s + zeros
