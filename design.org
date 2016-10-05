@@ -27,3 +27,11 @@
       - eg. step counter for gradnets
 - solution:
   - make graph wrapper
+* custom get_variable
+- set default to always 0s
+- make it hookable
+  - previous use cases for hooking get_shared / get_variable:
+    - meta adam
+    - weight normalization
+    - inits
+  - arguably, get_variable is the wrong place to hook these things, but it is convenient, so we leave it hookable
