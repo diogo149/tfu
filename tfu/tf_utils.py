@@ -5,17 +5,18 @@ from . import base
 
 
 @base.hooked
-def linear(name, tensor, num_units):
+def linear(tensor, num_units, name=None):
     with base.variable_scope(name):
-        num_inputs = utils.get_shape_values(tensor)[-1]
-        W = base.get_variable(name="W",
-                              shape=(num_inputs, num_units),
-                              dtype=tensor.dtype,
-                              trainable=True,
-                              weight=True,
-                              in_axes=[0],
-                              out_axes=[1])
-        return utils.dot(tensor, W)
+        with base.variable_scope("linear"):
+            num_inputs = utils.get_shape_values(tensor)[-1]
+            W = base.get_variable(name="W",
+                                  shape=(num_inputs, num_units),
+                                  dtype=tensor.dtype,
+                                  trainable=True,
+                                  weight=True,
+                                  in_axes=[0],
+                                  out_axes=[1])
+            return utils.dot(tensor, W)
 
 
 @base.hooked
@@ -58,7 +59,7 @@ def learned_scaling(name, tensor, axis=-1):
 @base.hooked
 def affine(name, tensor, num_units):
     with base.variable_scope(name):
-        return add_bias("bias", linear("linear", tensor, num_units))
+        return add_bias("bias", linear(tensor, num_units, "linear"))
 
 
 def split_axis(tensor, axis, sizes):

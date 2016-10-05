@@ -42,10 +42,10 @@ class LNSimpleRNNStep(tfu.RNNStep):
             x, = inputs
             h = state
             with tfu.variable_scope("x_to_h"):
-                x_to_h = tfu.linear("linear", x, self.num_units)
+                x_to_h = tfu.linear(x, self.num_units, "linear")
                 x_to_h = layer_normalization("ln", x_to_h)
             with tfu.variable_scope("h_to_h"):
-                h_to_h = tfu.linear("linear", h, self.num_units)
+                h_to_h = tfu.linear(h, self.num_units, "linear")
                 h_to_h = layer_normalization("ln", h_to_h)
             logit = tfu.add_bias("bias", x_to_h + h_to_h)
 

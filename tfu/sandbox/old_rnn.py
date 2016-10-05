@@ -13,8 +13,8 @@ def simple_rnn_step(tensors, state):
         assert is_symbolic(h)
         num_units = get_shape_values(h)[-1]
         logit = add_bias("bias",
-                         linear("x_to_h", x, num_units) +
-                         linear("h_to_h", h, num_units))
+                         linear(x, num_units, "x_to_h") +
+                         linear(h, num_units, "h_to_h"))
 
         @base.hooked
         def nonlinearity(logit):
@@ -36,17 +36,17 @@ def lstm_step(tensors, state):
         num_units = get_shape_values(h)[-1]
         assert get_shape_values(c)[-1] == num_units
         forget_logit = add_bias("forget_bias",
-                                linear("forget_x", x, num_units) +
-                                linear("forget_h", h, num_units))
+                                linear(x, num_units, "forget_x") +
+                                linear(h, num_units, "forget_h"))
         input_logit = add_bias("input_bias",
-                               linear("input_x", x, num_units) +
-                               linear("input_h", h, num_units))
+                               linear(x, num_units, "input_x") +
+                               linear(h, num_units, "input_h"))
         output_logit = add_bias("output_bias",
-                                linear("output_x", x, num_units) +
-                                linear("output_h", h, num_units))
+                                linear(x, num_units, "output_x") +
+                                linear(h, num_units, "output_h"))
         update_logit = add_bias("update_bias",
-                                linear("update_x", x, num_units) +
-                                linear("update_h", h, num_units))
+                                linear(x, num_units, "update_x") +
+                                linear(h, num_units, "update_h"))
         f = tf.nn.sigmoid(forget_logit)
         i = tf.nn.sigmoid(input_logit)
         o = tf.nn.sigmoid(output_logit)
@@ -73,7 +73,7 @@ def simple_rnn_layer(name, tensor, state):
         def _step(tensors, state):
             z_, = tensors
             h_ = state
-            logit = z_ + linear("h_to_h", h_, num_units=num_units)
+            logit = z_ + linear(h_, num_units=num_units, "h_to_h")
             return nonlinearity(logit=logit)
 
         outputs = rnn_reduce("rnn", _step, [z], h)

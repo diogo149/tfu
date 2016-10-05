@@ -63,10 +63,10 @@ h = tfu.flatten(x, 2)
 tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.orthogonal))
 
 with tf.variable_scope("mlp"):
-    h = tfu.linear("fc1", h, 512)
+    h = tfu.linear(h, 512, "fc1")
     h = bachelor_normalization("bn1", h)
     h = tf.nn.relu(h)
-    h = tfu.linear("fc2", h, 512)
+    h = tfu.linear(h, 512, "fc2")
     h = bachelor_normalization("bn2", h)
     h = tf.nn.relu(h)
     h = tfu.affine("logit", h, 10)

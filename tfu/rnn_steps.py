@@ -19,8 +19,8 @@ class SimpleRNNStep(RNNStep):
             h = state
             logit = tf_utils.add_bias(
                 "bias",
-                tf_utils.linear("x_to_h", x, self.num_units) +
-                tf_utils.linear("h_to_h", h, self.num_units))
+                tf_utils.linear(x, self.num_units, "x_to_h") +
+                tf_utils.linear(h, self.num_units, "h_to_h"))
 
             @base.hooked
             def nonlinearity(logit):
@@ -52,8 +52,8 @@ class LSTMStep_v1(RNNStep):
                 with base.variable_scope(name):
                     logit = tf_utils.add_bias(
                         "bias",
-                        tf_utils.linear("x_to_h", x, self.num_units) +
-                        tf_utils.linear("h_to_h", h, self.num_units))
+                        tf_utils.linear(x, self.num_units, "x_to_h") +
+                        tf_utils.linear(h, self.num_units, "h_to_h"))
                 logits.append(logit)
             f = tf.nn.sigmoid(logits[0])
             i = tf.nn.sigmoid(logits[1])
