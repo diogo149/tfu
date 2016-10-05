@@ -16,3 +16,14 @@
 - solution
   - use initializer
   - pass in metadata as dict instead
+* extended graph
+- either:
+  - make graph wrapper
+  - use existing graph and add attributes
+- to store graph + extra state
+  - eg.
+    - metadata
+    - state for specific tricks
+      - eg. step counter for gradnets
+- solution:
+  - make graph wrapper
