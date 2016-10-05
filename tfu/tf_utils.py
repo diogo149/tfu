@@ -118,43 +118,24 @@ def conv2d(name,
            num_filters,
            filter_size,
            strides=(1, 1),
-           padding="SAME",
-           data_format="NHWC"):
+           padding="SAME"):
     assert isinstance(filter_size, tuple)
     assert utils.ndim(tensor) == 4
     with base.variable_scope(name):
-        if data_format == "NHWC":
-            strides = (1,) + strides + (1,)
-            num_channels = utils.get_shape_values(tensor)[3]
-            filter_shape = filter_size + (num_channels, num_filters)
-            W = base.get_variable(name="W",
-                                  shape=filter_shape,
-                                  dtype=tensor.dtype,
-                                  trainable=True,
-                                  weight=True,
-                                  in_axes=[2],
-                                  out_axes=[3])
-        elif data_format == "NCHW":
-            # TODO are these right?
-            strides = (1, 1) + strides
-            num_channels = utils.get_shape_values(tensor)[1]
-            filter_shape = filter_size + (num_channels, num_filters)
-            # filter_shape = (num_channels,) + filter_size + (num_filters, )
-            W = base.get_variable(name="W",
-                                  shape=filter_shape,
-                                  dtype=tensor.dtype,
-                                  trainable=True,
-                                  weight=True,
-                                  in_axes=[2],
-                                  out_axes=[3])
-        else:
-            raise ValueError
-
+        strides = (1,) + strides + (1,)
+        num_channels = utils.get_shape_values(tensor)[3]
+        filter_shape = filter_size + (num_channels, num_filters)
+        W = base.get_variable(name="W",
+                              shape=filter_shape,
+                              dtype=tensor.dtype,
+                              trainable=True,
+                              weight=True,
+                              in_axes=[2],
+                              out_axes=[3])
         return tf.nn.conv2d(input=tensor,
                             filter=W,
                             strides=strides,
                             padding=padding,
-                            data_format=data_format,
                             name=name)
 
 
@@ -163,19 +144,16 @@ def max_pool2d(tensor,
                ksize,
                strides=None,
                padding="SAME",
-               data_format="NHWC",
                name=None):
     if strides is None:
         strides = ksize
     assert len(strides) == len(ksize) == 2
-    assert data_format == "NHWC"
     ksize = (1,) + ksize + (1,)
     strides = (1,) + strides + (1,)
     return tf.nn.max_pool(value=tensor,
                           ksize=ksize,
                           strides=strides,
                           padding=padding,
-                          data_format=data_format,
                           name=name)
 
 
@@ -184,31 +162,26 @@ def avg_pool2d(tensor,
                ksize,
                strides=None,
                padding="SAME",
-               data_format="NHWC",
                name=None):
     if strides is None:
         strides = ksize
     assert len(strides) == len(ksize) == 2
-    assert data_format == "NHWC"
     ksize = (1,) + ksize + (1,)
     strides = (1,) + strides + (1,)
     return tf.nn.avg_pool(value=tensor,
                           ksize=ksize,
                           strides=strides,
                           padding=padding,
-                          data_format=data_format,
                           name=name)
 
 
 @base.hooked
-def global_avg_pool2d(tensor, data_format="NHWC", name=None):
-    assert data_format == "NHWC"
+def global_avg_pool2d(tensor, name=None):
     ksize = [1] + utils.get_shape_symbolic(tensor)[1:3] + [1]
     res = tf.nn.avg_pool(value=tensor,
                          ksize=ksize,
                          strides=ksize,
                          padding="VALID",
-                         data_format=data_format,
                          name=name)
     return tf.squeeze(res, squeeze_dims=[1, 2])
 
