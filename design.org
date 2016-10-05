@@ -29,9 +29,19 @@
   - make graph wrapper
 * custom get_variable
 - set default to always 0s
+  - instead of tensorflow's default magic one
+  - rationale: make it easier to spot initialization bugs
 - make it hookable
   - previous use cases for hooking get_shared / get_variable:
     - meta adam
     - weight normalization
     - inits
   - arguably, get_variable is the wrong place to hook these things, but it is convenient, so we leave it hookable
+* less variable_scope/get_variable kwargs
+- some of the tensorflow defaults are hacky and not the best to use
+  - eg.
+    - collections
+    - regularizer
+- solution: make these unavailable and use metadata search instead
+  - implement the things we need as we need them
+  - additional benefit: don't have to support what seems like a constantly changing interface
