@@ -22,16 +22,14 @@ def linear(tensor, num_units, name=None):
 @base.hooked
 def add_bias(name, tensor, axis=-1):
     with base.variable_scope(name):
-        # TODO allow for multiple axes
-        num_units = utils.get_shape_values(tensor)[axis]
-        b = base.get_variable(name="b",
-                              shape=(num_units,),
-                              dtype=tensor.dtype,
-                              trainable=True,
-                              bias=True)
-        if axis == -1:
-            return tensor + b
-        else:
+        with base.variable_scope("add_bias"):
+            # TODO allow for multiple axes
+            num_units = utils.get_shape_values(tensor)[axis]
+            b = base.get_variable(name="b",
+                                  shape=(num_units,),
+                                  dtype=tensor.dtype,
+                                  trainable=True,
+                                  bias=True)
             pattern = ["x"] * utils.ndim(tensor)
             pattern[axis] = 0
             return tensor + utils.dimshuffle(b, pattern)
