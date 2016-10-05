@@ -15,7 +15,7 @@ def layer_normalization(name,
                         include_scale=True):
     # default epsilon taken from
     # https://github.com/ryankiros/layer-norm/blob/master/layers.py
-    with tf.variable_scope(name):
+    with tfu.variable_scope(name):
         mean, variance = tf.nn.moments(
             x=tensor,
             axes=[dim for dim in range(tfu.ndim(tensor))

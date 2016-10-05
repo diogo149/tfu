@@ -6,7 +6,7 @@ from . import base
 
 @base.hooked
 def linear(name, tensor, num_units):
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         num_inputs = utils.get_shape_values(tensor)[-1]
         W = base.get_variable(name="W",
                               shape=(num_inputs, num_units),
@@ -20,7 +20,7 @@ def linear(name, tensor, num_units):
 
 @base.hooked
 def add_bias(name, tensor, axis=-1):
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         # TODO allow for multiple axes
         num_units = utils.get_shape_values(tensor)[axis]
         b = base.get_variable(name="b",
@@ -38,7 +38,7 @@ def add_bias(name, tensor, axis=-1):
 
 @base.hooked
 def learned_scaling(name, tensor, axis=-1):
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         # TODO allow for multiple axes
         num_units = utils.get_shape_values(tensor)[axis]
         # TODO should this be exponential or linear
@@ -58,7 +58,7 @@ def learned_scaling(name, tensor, axis=-1):
 
 @base.hooked
 def affine(name, tensor, num_units):
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         return add_bias("bias", linear("linear", tensor, num_units))
 
 
@@ -79,14 +79,14 @@ def split_axis(tensor, axis, sizes):
 
 @base.hooked
 def multi_linear(names, tensor, num_units, split_output=True):
-    with tf.variable_scope("multi_linear"):
+    with base.variable_scope("multi_linear"):
         if isinstance(num_units, int):
             num_units = [num_units] * len(names)
         assert len(num_units) == len(names)
         num_inputs = utils.get_shape_values(tensor)[-1]
         Ws = []
         for name, n in zip(names, num_units):
-            with tf.variable_scope(name):
+            with base.variable_scope(name):
                 W = base.get_variable(name="W",
                                       shape=(num_inputs, n),
                                       dtype=tensor.dtype,
@@ -108,7 +108,7 @@ def multi_affine(names, tensor, num_units):
     results = multi_linear(names, tensor, num_units)
     new_results = []
     for name, result in zip(names, results):
-        with tf.variable_scope(name):
+        with base.variable_scope(name):
             new_results.append(add_bias("bias", result))
     return new_results
 
@@ -123,7 +123,7 @@ def conv2d(name,
            data_format="NHWC"):
     assert isinstance(filter_size, tuple)
     assert utils.ndim(tensor) == 4
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         if data_format == "NHWC":
             strides = (1,) + strides + (1,)
             num_channels = utils.get_shape_values(tensor)[3]
@@ -216,7 +216,7 @@ def global_avg_pool2d(tensor, data_format="NHWC", name=None):
 
 @base.hooked
 def batch_normalization(name, tensor, epsilon=1e-4):
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         num_units = utils.get_shape_values(tensor)[1]
         beta = base.get_variable("beta",
                                  shape=[num_units],
@@ -253,7 +253,7 @@ def rnn_reduce(name,
     num_steps, = set(map(lambda x: utils.get_shape_values(x)[0], tensors))
     state = initial_state
     outputs = []
-    with tf.variable_scope(name):
+    with base.variable_scope(name):
         for time_step in range(num_steps):
             if time_step > 0:
                 tf.get_variable_scope().reuse_variables()

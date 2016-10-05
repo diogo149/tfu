@@ -40,7 +40,7 @@ class RNNStep(object):
             kwargs={"inputs": inputs,
                     "state": state},
         )
-        with tf.variable_scope(scope or type(self).__name__):
+        with base.variable_scope(scope or type(self).__name__):
             return hs()
 
     def to_cell(self):
@@ -81,13 +81,13 @@ class RNNStep(object):
         elif isinstance(ss, list):
             results = []
             for idx, s in enumerate(ss):
-                with tf.variable_scope(str(idx)):
+                with base.variable_scope(str(idx)):
                     results.append(self.variable_state(s, **kwargs))
             return results
         elif isinstance(ss, dict):
             results = {}
             for k, v in ss.items():
-                with tf.variable_scope(k):
+                with base.variable_scope(k):
                     results[k] = self.variable_state(v, **kwargs)
             return results
         else:

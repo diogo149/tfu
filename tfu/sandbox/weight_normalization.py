@@ -36,7 +36,7 @@ def weight_normalization_hook(**filter_dsl_kwargs):
 
             norm = tf.sqrt(tf.reduce_sum(tf.square(w), axes_to_sum))
 
-            with tf.variable_scope("weight_normalization"):
+            with tfu.variable_scope("weight_normalization"):
                 g = tfu.get_variable("g",
                                      # don't need to provide shape if
                                      # initializer is a constant

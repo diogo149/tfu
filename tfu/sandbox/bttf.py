@@ -24,7 +24,7 @@ def backprop_to_the_future_mean(current_mean,
                                 rolling_grad=None,
                                 mean_initializer=0,
                                 name="bttf_mean"):
-    with tf.variable_scope(name):
+    with tfu.variable_scope(name):
         if rolling_mean is None:
             rolling_mean = tfu.get_variable(
                 name="rolling_mean",
