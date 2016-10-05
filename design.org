@@ -64,3 +64,23 @@
   - the original rationale seems to be to have a function from metadata to value
 - also allows numpy initializers (eg. orthogonal) to behave the same way as more basic ones
   - eg. heterogeneous inits could cause issues with random seed-ing
+* update format
+- doing it as op
+  - pros
+    - simplest to use
+  - cons
+    - it's opaque and can't be transformed/inspected
+- accumulating pairs
+  - pros
+    - most general
+  - cons
+    - ugliest code
+      - eg. need to accumulate in a for loop
+- having an accumulator that maintains an OrderedDict
+  - pros
+    - update code is almost as clean as doing it as an op
+  - cons
+    - accumulator code is specific to updates
+      - ideally we want to use the same-ish for monitoring
+- solution:
+  - accumulator that maintains an OrderedDict + shared accumulator base class
