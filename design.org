@@ -48,3 +48,10 @@
 - solution: make these unavailable and use metadata search instead
   - implement the things we need as we need them
   - additional benefit: don't have to support what seems like a constantly changing interface
+* initializer functions vs initial_values
+- pros of making all initializers return tensors/numpy arrays
+  - easier composability
+    - eg. easier to make a scale by 2 hook
+  - cleaner init code
+- seems like we get nothing from having initializer functions
+  - the original rationale seems to be to have a function from metadata to value
