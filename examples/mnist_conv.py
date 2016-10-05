@@ -3,25 +3,14 @@ import tensorflow as tf
 import tfu
 import du
 
-DATA_FORMAT = "NHWC"
-# DATA_FORMAT = "NCHW"  # TODO test
-
 train, valid, test = du.tasks.image_tasks.mnist("float32")
 for dataset in [train, valid, test]:
-    dataset["x"] = dataset["x"].astype("float32")
+    dataset["x"] = dataset["x"].astype("float32").reshape((-1, 28, 28, 1))
     dataset["y"] = dataset["y"].astype("int64")
-
-    if DATA_FORMAT == "NHWC":
-        dataset["x"] = dataset["x"].reshape((-1, 28, 28, 1))
-
-init_shape = {
-    "NHWC": [None, 28, 28, 1],
-    "NCHW": [None, 1, 28, 28],
-}[DATA_FORMAT]
 
 sess = tf.InteractiveSession()
 
-x = tf.placeholder(tf.float32, shape=init_shape)
+x = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
 y_ = tf.placeholder(tf.int64, shape=[None])
 
 h = x
@@ -32,20 +21,20 @@ with tf.variable_scope("mlp",
                    h,
                    num_filters=16,
                    filter_size=(5, 5),
-                   # strides=(2, 2),
-                   data_format=DATA_FORMAT)
+                   # strides=(2, 2)
+                   )
     # TODO add bias
     h = tf.nn.relu(h)
-    h = tfu.max_pool2d(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.max_pool2d(h, (2, 2))
     h = tfu.conv2d("conv2",
                    h,
                    num_filters=32,
                    filter_size=(5, 5),
                    # strides=(2, 2),
-                   data_format=DATA_FORMAT)
+                   )
     # TODO add bias
     h = tf.nn.relu(h)
-    h = tfu.max_pool2d(h, (2, 2), data_format=DATA_FORMAT)
+    h = tfu.max_pool2d(h, (2, 2))
     h = tfu.flatten(h, 2)
     h = tfu.affine("fc1", h, 256)
     h = tf.nn.relu(h)
