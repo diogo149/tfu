@@ -79,6 +79,7 @@
 - having an accumulator that maintains an OrderedDict
   - pros
     - update code is almost as clean as doing it as an op
+    - dicts are very convenient for introspection
   - cons
     - accumulator code is specific to updates
       - ideally we want to use the same-ish for monitoring
