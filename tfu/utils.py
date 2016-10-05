@@ -177,6 +177,15 @@ def dimshuffle(tensor, pattern):
     similar to theano's dimshuffle
     """
     result = tensor
+    # normalize pattern type
+    assert isinstance(pattern, (list, tuple))
+    pattern = tuple(pattern)
+
+    # optimization: if pattern is all "x"'s followed by all the axes
+    # in order, simply return the original tensor
+    if (set(pattern[:-ndim(tensor)]) == {"x"} and
+            pattern[-ndim(tensor):] == tuple(range(ndim(tensor)))):
+        return tensor
 
     squeeze_dims = []
     for dim in range(ndim(tensor)):
