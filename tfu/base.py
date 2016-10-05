@@ -102,35 +102,36 @@ def temporary_hook(fn, location="outer"):
 
 @contextlib.contextmanager
 def variable_scope(name_or_scope=None,
-                   metadata=None,
-                   **kwargs):
+                   default_name=None,
+                   reuse=None,
+                   **metadata):
     """
     wrapped version of variable_scope; differences:
+    - less arguments available
     - allows specifying optional metadata
     """
-    with tf.variable_scope(name_or_scope=name_or_scope, **kwargs):
-        if metadata is None:
+    with tf.variable_scope(name_or_scope=name_or_scope,
+                           default_name=default_name,
+                           reuse=reuse):
+        prev_metadata = default_graph_state().current_metadata
+        new_metadata = dict(prev_metadata)  # make a copy
+        new_metadata.update(metadata)
+        try:
+            default_graph_state().current_metadata = new_metadata
             yield
-        else:
-            prev_metadata = default_graph_state().current_metadata
-            new_metadata = dict(prev_metadata)  # make a copy
-            new_metadata.update(metadata)
-            try:
-                default_graph_state().current_metadata = new_metadata
-                yield
-            finally:
-                default_graph_state().current_metadata = prev_metadata
+        finally:
+            default_graph_state().current_metadata = prev_metadata
 
 
 @hooked
 def get_variable(name,
                  shape=None,
                  dtype=tf.float32,
-                 initializer=None,
-                 metadata=None,
-                 **kwargs):
+                 initializer=tf.constant_initializer(0.),
+                 **metadata):
     """
     wrapped version of tf.get_variable; differences:
+    - less arguments available
     - allows specifying optional metadata
     - allows hooking of initializer
     - default to zero init
@@ -138,8 +139,7 @@ def get_variable(name,
     # make a copy of currrent metadata
     new_metadata = dict(default_graph_state().current_metadata)
     # overwrite with given metadata
-    if metadata is not None:
-        new_metadata.update(metadata)
+    new_metadata.update(metadata)
     # also including these fields in the metadata because they may be
     # useful
     # e.g. for initialization
@@ -147,25 +147,18 @@ def get_variable(name,
         name=name,
         shape=shape,
         dtype=dtype,
-        initializer=initializer,
     ))
 
     @hooked
     def get_initializer(metadata):
-        initializer = metadata["initializer"]
-        if initializer is None:
-            # use zero init as default instead of tensorflow's default
-            # magic one
-            # rationale: make it easier to spot initialization bugs
-            tf.constant_initializer(0.)
         return initializer
 
     new_initializer = get_initializer(new_metadata)
+
     var = tf.get_variable(name=name,
                           shape=shape,
                           dtype=dtype,
-                          initializer=new_initializer,
-                          **kwargs)
+                          initializer=new_initializer)
     default_graph_state().variable_metadata[var] = new_metadata
     return var
 
