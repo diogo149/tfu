@@ -182,7 +182,7 @@ def get_variable(name,
         new_initial_value = tf.cast(new_initial_value, dtype)
 
     var = tf.get_variable(name=name,
-                          shape=shape,
+                          shape=None,
                           dtype=None,
                           initializer=new_initial_value)
     default_graph_state().variable_metadata[var] = new_metadata
