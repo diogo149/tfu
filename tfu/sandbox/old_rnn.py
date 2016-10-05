@@ -12,8 +12,7 @@ def simple_rnn_step(tensors, state):
         assert is_symbolic(x)
         assert is_symbolic(h)
         num_units = get_shape_values(h)[-1]
-        logit = add_bias("bias",
-                         linear(x, num_units, "x_to_h") +
+        logit = add_bias(linear(x, num_units, "x_to_h") +
                          linear(h, num_units, "h_to_h"))
 
         @base.hooked
@@ -35,18 +34,18 @@ def lstm_step(tensors, state):
         assert is_symbolic(c)
         num_units = get_shape_values(h)[-1]
         assert get_shape_values(c)[-1] == num_units
-        forget_logit = add_bias("forget_bias",
-                                linear(x, num_units, "forget_x") +
-                                linear(h, num_units, "forget_h"))
-        input_logit = add_bias("input_bias",
-                               linear(x, num_units, "input_x") +
-                               linear(h, num_units, "input_h"))
-        output_logit = add_bias("output_bias",
-                                linear(x, num_units, "output_x") +
-                                linear(h, num_units, "output_h"))
-        update_logit = add_bias("update_bias",
-                                linear(x, num_units, "update_x") +
-                                linear(h, num_units, "update_h"))
+        forget_logit = add_bias(linear(x, num_units, "forget_x") +
+                                linear(h, num_units, "forget_h"),
+                                name="forget_bias")
+        input_logit = add_bias(linear(x, num_units, "input_x") +
+                               linear(h, num_units, "input_h"),
+                               name - "input_bias")
+        output_logit = add_bias(linear(x, num_units, "output_x") +
+                                linear(h, num_units, "output_h"),
+                                name="output_bias")
+        update_logit = add_bias(linear(x, num_units, "update_x") +
+                                linear(h, num_units, "update_h"),
+                                name="update_bias")
         f = tf.nn.sigmoid(forget_logit)
         i = tf.nn.sigmoid(input_logit)
         o = tf.nn.sigmoid(output_logit)

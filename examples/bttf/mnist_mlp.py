@@ -44,7 +44,7 @@ def bachelor_normalization(name, x, beta=0.95, epsilon=1e-4):
                                     tf.inv(tf.sqrt(mu2 + epsilon)),
                                     axis=1)
         res = (x - mu) * scale
-        res = tfu.add_bias("bias", res, axis=1)
+        res = tfu.add_bias(res, axis=1)
         return res
 
 

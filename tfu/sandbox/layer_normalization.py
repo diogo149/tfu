@@ -25,7 +25,7 @@ def layer_normalization(name,
         if include_scale:
             z = tfu.learned_scaling("scale", z)
         if include_bias:
-            z = tfu.add_bias("bias", z)
+            z = tfu.add_bias(z)
         return z
 
 
@@ -47,7 +47,7 @@ class LNSimpleRNNStep(tfu.RNNStep):
             with tfu.variable_scope("h_to_h"):
                 h_to_h = tfu.linear(h, self.num_units, "linear")
                 h_to_h = layer_normalization("ln", h_to_h)
-            logit = tfu.add_bias("bias", x_to_h + h_to_h)
+            logit = tfu.add_bias(x_to_h + h_to_h)
 
             @tfu.hooked
             def nonlinearity(logit):
@@ -89,7 +89,7 @@ class LNLSTMStep(tfu.RNNStep):
             logits = []
             for name, x_logit, h_logit in zip(multi_names, x_logits, h_logits):
                 with tfu.variable_scope(name):
-                    logit = tfu.add_bias("bias", x_logit + h_logit)
+                    logit = tfu.add_bias(x_logit + h_logit)
                 logits.append(logit)
             f = tf.nn.sigmoid(logits[0])
             i = tf.nn.sigmoid(logits[1])

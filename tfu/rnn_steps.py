@@ -18,7 +18,6 @@ class SimpleRNNStep(RNNStep):
             x, = inputs
             h = state
             logit = tf_utils.add_bias(
-                "bias",
                 tf_utils.linear(x, self.num_units, "x_to_h") +
                 tf_utils.linear(h, self.num_units, "h_to_h"))
 
@@ -51,7 +50,6 @@ class LSTMStep_v1(RNNStep):
             for name in ["forget", "input", "output", "update"]:
                 with base.variable_scope(name):
                     logit = tf_utils.add_bias(
-                        "bias",
                         tf_utils.linear(x, self.num_units, "x_to_h") +
                         tf_utils.linear(h, self.num_units, "h_to_h"))
                 logits.append(logit)
@@ -91,7 +89,7 @@ class LSTMStep(RNNStep):
             logits = []
             for name, x_logit, h_logit in zip(multi_names, x_logits, h_logits):
                 with base.variable_scope(name):
-                    logit = tf_utils.add_bias("bias", x_logit + h_logit)
+                    logit = tf_utils.add_bias(x_logit + h_logit)
                 logits.append(logit)
             f = tf.nn.sigmoid(logits[0])
             i = tf.nn.sigmoid(logits[1])

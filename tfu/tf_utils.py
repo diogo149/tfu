@@ -20,7 +20,7 @@ def linear(tensor, num_units, name=None):
 
 
 @base.hooked
-def add_bias(name, tensor, axis=-1):
+def add_bias(tensor, axis=-1, name=None):
     with base.variable_scope(name):
         with base.variable_scope("add_bias"):
             # TODO allow for multiple axes
@@ -57,7 +57,7 @@ def learned_scaling(name, tensor, axis=-1):
 @base.hooked
 def affine(name, tensor, num_units):
     with base.variable_scope(name):
-        return add_bias("bias", linear(tensor, num_units, "linear"))
+        return add_bias(linear(tensor, num_units))
 
 
 def split_axis(tensor, axis, sizes):
@@ -107,7 +107,7 @@ def multi_affine(names, tensor, num_units):
     new_results = []
     for name, result in zip(names, results):
         with base.variable_scope(name):
-            new_results.append(add_bias("bias", result))
+            new_results.append(add_bias(result))
     return new_results
 
 
