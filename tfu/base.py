@@ -358,6 +358,12 @@ class UpdatesAccumulator(Accumulator):
                     raise ValueError("unknown merge_strategy: %s" %
                                      self.merge_strategy)
 
+    def to_op(self):
+        ops = []
+        for k, v in self.updates.items():
+            ops.append(tf.assign(k, v))
+        return tf.group(*ops)
+
 
 def accumulate(value, required=False, **metadata):
     accumulated = False
