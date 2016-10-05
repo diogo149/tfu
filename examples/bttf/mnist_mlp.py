@@ -40,8 +40,7 @@ def bachelor_normalization(name, x, beta=0.95, epsilon=1e-4):
                                   name="bttf_mean2")
         mu2 = beta * bttf_mu2 + (1 - beta) * mix_mean2
 
-        scale = tfu.learned_scaling("scale",
-                                    tf.inv(tf.sqrt(mu2 + epsilon)),
+        scale = tfu.learned_scaling(tf.inv(tf.sqrt(mu2 + epsilon)),
                                     axis=1)
         res = (x - mu) * scale
         res = tfu.add_bias(res, axis=1)

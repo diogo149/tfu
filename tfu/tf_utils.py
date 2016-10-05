@@ -36,19 +36,17 @@ def add_bias(tensor, axis=-1, name=None):
 
 
 @base.hooked
-def learned_scaling(name, tensor, axis=-1):
+def learned_scaling(tensor, axis=-1, name=None):
     with base.variable_scope(name):
-        # TODO allow for multiple axes
-        num_units = utils.get_shape_values(tensor)[axis]
-        # TODO should this be exponential or linear
-        scale = base.get_variable(name="scale",
-                                  shape=(num_units,),
-                                  dtype=tensor.dtype,
-                                  trainable=True)
-        scale = tf.exp(scale)
-        if axis == -1:
-            return tensor * scale
-        else:
+        with base.variable_scope("learned_scaling"):
+            # TODO allow for multiple axes
+            num_units = utils.get_shape_values(tensor)[axis]
+            # TODO should this be exponential or linear
+            scale = base.get_variable(name="scale",
+                                      shape=(num_units,),
+                                      dtype=tensor.dtype,
+                                      trainable=True)
+            scale = tf.exp(scale)
             pattern = ["x"] * utils.ndim(tensor)
             pattern[axis] = 0
             return tensor * utils.dimshuffle(scale, pattern)

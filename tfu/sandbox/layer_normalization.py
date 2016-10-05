@@ -23,7 +23,7 @@ def layer_normalization(name,
             keep_dims=True)
         z = (tensor - mean) / tf.sqrt(variance + epsilon)
         if include_scale:
-            z = tfu.learned_scaling("scale", z)
+            z = tfu.learned_scaling(z)
         if include_bias:
             z = tfu.add_bias(z)
         return z
