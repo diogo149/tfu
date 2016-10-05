@@ -3,6 +3,7 @@
 - regularizer
 - collections
 - custom_getter
+- variable search
 * how to do inits?
 - either:
   - change initializer_op
