@@ -5,13 +5,13 @@ from . import base
 
 
 def default_kwargs(kwargs):
-    def inner(hs):
+    def default_kwargs_inner(hs):
         new_kwargs = dict(kwargs)
         new_kwargs.update(hs.kwargs)
         hs.kwargs = new_kwargs
         return hs()
 
-    return inner
+    return default_kwargs_inner
 
 
 def default_kwargs_dsl(kwargs, key):
@@ -19,13 +19,13 @@ def default_kwargs_dsl(kwargs, key):
 
 
 def override_kwargs(kwargs):
-    def inner(hs):
+    def override_kwargs_inner(hs):
         new_kwargs = dict(hs.kwargs)
         new_kwargs.update(kwargs)
         hs.kwargs = new_kwargs
         return hs()
 
-    return inner
+    return override_kwargs_inner
 
 
 def override_kwargs_dsl(kwargs, key):

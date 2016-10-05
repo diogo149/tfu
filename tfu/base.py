@@ -63,7 +63,7 @@ def hooked(fn):
     """
 
     @functools.wraps(fn)
-    def inner(*args, **kwargs):
+    def hooked_inner(*args, **kwargs):
         hs = HookedState(
             key=fn.func_name,
             fn=fn,
@@ -72,7 +72,7 @@ def hooked(fn):
         )
         return hs()
 
-    return inner
+    return hooked_inner
 
 
 def add_hook(fn, location="outer"):
@@ -238,13 +238,13 @@ def wrap_filter(hook, filter_fn):
     takes in a hook and only applies it when the given filter function
     returns a truthy value
     """
-    def inner(hs):
+    def wrap_filter_inner(hs):
         if filter_fn(hs):
             return hook(hs)
         else:
             return hs()
 
-    return inner
+    return wrap_filter_inner
 
 
 def filter_dsl(hook,
@@ -266,7 +266,7 @@ def filter_dsl(hook,
     """
     # TODO do we want it to work on regexes instead of exact string matches
 
-    def inner(hs):
+    def filter_dsl_inner(hs):
         if key is not None:
             if isinstance(key, six.string_types):
                 if key != hs.key:
@@ -300,7 +300,7 @@ def filter_dsl(hook,
 
         return hook(hs)
 
-    return inner
+    return filter_dsl_inner
 
 # ############################### accumulators ###############################
 
