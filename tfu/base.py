@@ -301,3 +301,81 @@ def filter_dsl(hook,
         return hook(hs)
 
     return inner
+
+# ############################### accumulators ###############################
+
+
+class Accumulator(object):
+
+    def __init__(self,
+                 variable_scope=None,
+                 **metadata):
+        # TODO filtering based on variable scope
+        assert variable_scope is None
+        self.metadata = metadata
+        self.values = []
+
+    def __enter__(self):
+        assert self not in default_graph_state().accumulators
+        default_graph_state().accumulators.append(self)
+        return self
+
+    def __exit__(self, type, value, tb):
+        while self in default_graph_state().accumulators:
+            default_graph_state().accumulators.remove(self)
+        # don't supress any exception
+        return False
+
+    def accumulate(self, value):
+        self.values.append(value)
+
+
+class UpdatesAccumulator(Accumulator):
+
+    def __init__(self, merge_strategy="raise",
+                 variable_scope=None,
+                 **metadata):
+        self.merge_strategy = merge_strategy
+        self.updates = collections.OrderedDict()
+        super(UpdatesAccumulator, self).__init__(variable_scope,
+                                                 update_dict=True,
+                                                 **metadata)
+
+    def accumulate(self, updates):
+        for k, v in updates.items():
+            # make sure we aren't overwritting anything
+            if k not in self.updates:
+                self.updates[k] = v
+            else:
+                if self.merge_strategy == "raise":
+                    raise ValueError("key already in updates accumulator: %s" %
+                                     k)
+                elif self.merge_strategy == "add":
+                    self.updates[k] = self.updates[k] + v - k
+                elif self.merge_strategy == "overwrite":
+                    self.updates[k] = v
+                else:
+                    raise ValueError("unknown merge_strategy: %s" %
+                                     self.merge_strategy)
+
+
+def accumulate(value, required=False, **metadata):
+    accumulated = False
+    for acc in default_graph_state().accumulators:
+        for k, v in acc.metadata.items():
+            if metadata.get(k) != v:
+                break
+        else:
+            acc.accumulate(value)
+            accumulated = True
+    if required and not accumulated:
+        raise Exception("required accumulation failed")
+
+
+def accumulate_update_dict(updates, **kwargs):
+    if isinstance(updates, list):
+        updates = collections.OrderedDict(updates)
+    assert isinstance(updates, collections.OrderedDict)
+    accumulate(value=updates,
+               update_dict=True,
+               **kwargs)
