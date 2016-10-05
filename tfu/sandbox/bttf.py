@@ -30,7 +30,7 @@ def backprop_to_the_future_mean(current_mean,
                 name="rolling_mean",
                 shape=current_mean.get_shape(),
                 dtype=current_mean.dtype,
-                initializer=tf.constant_initializer(value=mean_initializer),
+                initial_value=mean_initializer,
                 trainable=False,
             )
         if rolling_grad is None:

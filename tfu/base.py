@@ -135,7 +135,7 @@ def get_variable(name,
     wrapped version of tf.get_variable; differences:
     - less arguments available
     - allows specifying optional metadata
-    - allows hooking of initializer
+    - allows hooking of init
     - default to zero init
     - auto-converting dtype
     - only supporting initial value instead of initializer function

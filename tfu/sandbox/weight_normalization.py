@@ -38,11 +38,8 @@ def weight_normalization_hook(**filter_dsl_kwargs):
 
             with tfu.variable_scope("weight_normalization"):
                 g = tfu.get_variable("g",
-                                     # don't need to provide shape if
-                                     # initializer is a constant
-                                     # shape=g_shape,
                                      dtype=w.dtype,
-                                     initializer=norm,
+                                     initial_value=norm,
                                      trainable=True,
                                      weight_normalization_g=True)
 
