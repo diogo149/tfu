@@ -42,6 +42,9 @@
   - eg.
     - collections
     - regularizer
+- some require hacks to work with metdata
+  - eg.
+    - trainable affecting collection, while it would be better to search via metadata
 - solution: make these unavailable and use metadata search instead
   - implement the things we need as we need them
   - additional benefit: don't have to support what seems like a constantly changing interface
