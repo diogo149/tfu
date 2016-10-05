@@ -23,7 +23,7 @@ with tf.variable_scope("model"):
     h = tf.transpose(h, perm=(1, 0, 2))
     outputs = ln.LNSimpleRNNStep(NUM_HIDDEN).apply_layer("rnn", [h])
     h = outputs[-1]
-    h = tfu.affine("final_dense", h, num_units=1)
+    h = tfu.affine(h, num_units=1, name="final_dense")
     y = h
 
 mse = tf.reduce_mean(tf.square(y - y_))

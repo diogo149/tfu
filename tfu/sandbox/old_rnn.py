@@ -63,7 +63,7 @@ def simple_rnn_layer(name, tensor, state):
         assert is_symbolic(x)
         assert is_symbolic(h)
         num_units = get_shape_values(h)[-1]
-        z = affine("x_to_h", x, num_units=num_units)
+        z = affine(x, num_units=num_units, name="x_to_h")
 
         @base.hooked
         def nonlinearity(logit):

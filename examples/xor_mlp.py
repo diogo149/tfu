@@ -18,9 +18,9 @@ h = x
 
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
-    h = tfu.affine("fc", h, 32)
+    h = tfu.affine(h, 32, name="fc")
     h = tf.nn.relu(h)
-    h = tfu.affine("logit", h, 1)
+    h = tfu.affine(h, 1, name="logit")
 
 y = tf.nn.sigmoid(tf.squeeze(h, squeeze_dims=[1]))
 

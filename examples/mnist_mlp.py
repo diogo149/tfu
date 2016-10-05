@@ -19,13 +19,13 @@ h = tfu.flatten(x, 2)
 
 with tf.variable_scope("mlp"):
     with tfu.temporary_hook(tfu.inits.set_weight_init(tfu.inits.xavier_normal)):
-        h = tfu.affine("fc1", h, 512)
+        h = tfu.affine(h, 512, "fc1")
         h = tf.nn.relu(h)
         h = tf.nn.dropout(h, keep_prob=keep_prob)
-        h = tfu.affine("fc2", h, 512)
+        h = tfu.affine(h, 512, "fc2")
         h = tf.nn.relu(h)
         h = tf.nn.dropout(h, keep_prob=keep_prob)
-        h = tfu.affine("logit", h, 10)
+        h = tfu.affine(h, 10, "logit")
 
 cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y_))
 

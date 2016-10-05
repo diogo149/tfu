@@ -68,7 +68,7 @@ with tf.variable_scope("mlp"):
     h = tfu.linear(h, 512, "fc2")
     h = bachelor_normalization("bn2", h)
     h = tf.nn.relu(h)
-    h = tfu.affine("logit", h, 10)
+    h = tfu.affine(h, 10, name="logit")
 
 cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y_))
 

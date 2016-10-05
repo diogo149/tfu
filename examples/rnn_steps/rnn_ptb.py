@@ -33,7 +33,7 @@ def model(x, y_, rnn_state):
         h = tf.transpose(h, perm=(1, 0, 2))
         outputs = step.apply_layer("rnn", [h], initial_state=rnn_state)
         h = tf.pack(outputs)
-        h = tfu.affine("final_dense", h, num_units=50)
+        h = tfu.affine(h, num_units=50, name="final_dense")
         h = tf.transpose(h, perm=(1, 0, 2))
         y = h
 

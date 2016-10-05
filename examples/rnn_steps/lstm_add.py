@@ -24,7 +24,7 @@ with tf.variable_scope("model",
     with tfu.temporary_hook(tfu.inits.set_lstm_forget_bias_init(2.0)):
         outputs = tfu.LSTMStep(NUM_HIDDEN).apply_layer("rnn", [h])
     h = outputs[-1]["h"]
-    h = tfu.affine("final_dense", h, num_units=1)
+    h = tfu.affine(h, num_units=1, name="final_dense")
     y = h
 
 mse = tf.reduce_mean(tf.square(y - y_))

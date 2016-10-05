@@ -53,9 +53,10 @@ def learned_scaling(tensor, axis=-1, name=None):
 
 
 @base.hooked
-def affine(name, tensor, num_units):
+def affine(tensor, num_units, name=None):
     with base.variable_scope(name):
-        return add_bias(linear(tensor, num_units))
+        with base.variable_scope("affine"):
+            return add_bias(linear(tensor, num_units))
 
 
 def split_axis(tensor, axis, sizes):

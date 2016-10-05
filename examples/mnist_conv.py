@@ -36,11 +36,11 @@ with tf.variable_scope("mlp",
     h = tf.nn.relu(h)
     h = tfu.max_pool2d(h, (2, 2))
     h = tfu.flatten(h, 2)
-    h = tfu.affine("fc1", h, 256)
+    h = tfu.affine(h, 256, name="fc1")
     h = tf.nn.relu(h)
-    h = tfu.affine("fc2", h, 256)
+    h = tfu.affine(h, 256, name="fc2")
     h = tf.nn.relu(h)
-    h = tfu.affine("logit", h, 10)
+    h = tfu.affine(h, 10, name="logit")
 
 cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y_))
 
