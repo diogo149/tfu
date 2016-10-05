@@ -15,7 +15,7 @@ class GraphState(object):
         if graph is None:
             graph = tf.Graph()
         self.graph = graph
-        self.variable_metadata = collections.defaultdict(dict)
+        self.variable_metadata = {}
         self.current_metadata = {}
         self.hooks = []
         self.accumulators = []
@@ -187,6 +187,48 @@ def get_variable(name,
                           initializer=new_initial_value)
     default_graph_state().variable_metadata[var] = new_metadata
     return var
+
+# ############################# variable search #############################
+
+
+def variables(name=None, variable_scope=None, **metadata):
+    """
+    metadata based variable search
+    """
+    result = []
+    for var, var_meta in default_graph_state().variable_metadata.items():
+        var_path = var.name.split("/")
+
+        # for name match, we require an exact match
+        if name is not None:
+            if var_path[-1] != name + ":0":
+                continue
+
+        if variable_scope is not None:
+            vs_path = var_path[:-1]
+            if isinstance(variable_scope, six.string_types):
+                if variable_scope not in vs_path:
+                    continue
+            elif isinstance(variable_scope, (list, tuple)):
+                matched = True
+                for subscope in variable_scope:
+                    if subscope in vs_path:
+                        vs_path = vs_path[vs_path.index(subscope) + 1:]
+                    else:
+                        matched = False
+                        break
+                if not matched:
+                    continue
+            else:
+                raise ValueError("wrong variable_scope type: %s" %
+                                 variable_scope)
+
+        for k, v in metadata.items():
+            if var_meta.get(k) != v:
+                break
+        else:
+            result.append(var)
+    return result
 
 # ################################# filters #################################
 
