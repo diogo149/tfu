@@ -38,13 +38,13 @@ class LNSimpleRNNStep(tfu.RNNStep):
         return self.num_units
 
     def call(self, inputs, state):
-        with tf.variable_scope("simple_rnn"):
+        with tfu.variable_scope("simple_rnn"):
             x, = inputs
             h = state
-            with tf.variable_scope("x_to_h"):
+            with tfu.variable_scope("x_to_h"):
                 x_to_h = tfu.linear("linear", x, self.num_units)
                 x_to_h = layer_normalization("ln", x_to_h)
-            with tf.variable_scope("h_to_h"):
+            with tfu.variable_scope("h_to_h"):
                 h_to_h = tfu.linear("linear", h, self.num_units)
                 h_to_h = layer_normalization("ln", h_to_h)
             logit = tfu.add_bias("bias", x_to_h + h_to_h)
@@ -65,21 +65,21 @@ class LNLSTMStep(tfu.RNNStep):
         return {"h": self.num_units, "c": self.num_units}
 
     def call(self, inputs, state):
-        with tf.variable_scope("lstm"):
+        with tfu.variable_scope("lstm"):
             x, = inputs
             h = state["h"]
             c = state["c"]
 
             multi_names = ["forget", "input", "output", "update"]
             multi_units = [self.num_units] * 4
-            with tf.variable_scope("x_to_h"):
+            with tfu.variable_scope("x_to_h"):
                 x_logits = tfu.multi_linear(names=multi_names,
                                             tensor=x,
                                             num_units=multi_units,
                                             split_output=False)
                 x_logits = layer_normalization("ln", x_logits)
                 x_logits = tfu.split_axis(x_logits, axis=-1, sizes=multi_units)
-            with tf.variable_scope("h_to_h"):
+            with tfu.variable_scope("h_to_h"):
                 h_logits = tfu.multi_linear(names=multi_names,
                                             tensor=h,
                                             num_units=multi_units,
@@ -88,7 +88,7 @@ class LNLSTMStep(tfu.RNNStep):
                 h_logits = tfu.split_axis(h_logits, axis=-1, sizes=multi_units)
             logits = []
             for name, x_logit, h_logit in zip(multi_names, x_logits, h_logits):
-                with tf.variable_scope(name):
+                with tfu.variable_scope(name):
                     logit = tfu.add_bias("bias", x_logit + h_logit)
                 logits.append(logit)
             f = tf.nn.sigmoid(logits[0])
