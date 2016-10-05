@@ -4,11 +4,28 @@ import contextlib
 import six
 import tensorflow as tf
 
-# ################################ base hooks ################################
+# ############################### state class ###############################
 
 
-# global hooks state
-HOOKS = []
+class GraphState(object):
+
+    def __init__(self, graph=None):
+        if graph is None:
+            graph = tf.Graph()
+        self.graph = graph
+        self.variable_metadata = collections.defaultdict(dict)
+        self.current_metadata = {}
+        self.hooks = []
+        self.accumulators = []
+        self.misc = {}
+
+DEFAULT_GRAPH_STATE = [GraphState(graph=tf.get_default_graph())]
+
+
+def default_graph_state():
+    return DEFAULT_GRAPH_STATE[0]
+
+# ################################ base hooks ############################
 
 
 class HookedState(object):
@@ -25,7 +42,7 @@ class HookedState(object):
         # ---
         # rationale: this allows a hook to edit the list of hooks,
         # thus allowing hooks to be composed of other hooks
-        self.hooks = list(HOOKS)
+        self.hooks = list(default_graph_state().hooks)
 
     def __call__(self):
         if self.hooks:
@@ -58,18 +75,18 @@ def hooked(fn):
 
 def add_hook(fn, location="outer"):
     # TODO does it ever make sense to have a hook twice?
-    assert fn not in HOOKS
+    assert fn not in default_graph_state().hooks
     if location == "outer":
-        HOOKS.append(fn)
+        default_graph_state().hooks.append(fn)
     elif location == "inner":
-        HOOKS.insert(0, fn)
+        default_graph_state().hooks.insert(0, fn)
     else:
         raise ValueError("Invalid hook location: %s" % location)
 
 
 def remove_hook(fn):
-    while fn in HOOKS:
-        HOOKS.remove(fn)
+    while fn in default_graph_state().hooks:
+        default_graph_state().hooks.remove(fn)
 
 
 @contextlib.contextmanager
@@ -80,10 +97,29 @@ def temporary_hook(fn, location="outer"):
     finally:
         remove_hook(fn)
 
-# ############################### get_variable ###############################
+# ################## modified variable_scope / get_variable ##################
 
 
-VARIABLE_METADATA = collections.defaultdict(dict)
+@contextlib.contextmanager
+def variable_scope(name_or_scope=None,
+                   metadata=None,
+                   **kwargs):
+    """
+    wrapped version of variable_scope; differences:
+    - allows specifying optional metadata
+    """
+    with tf.variable_scope(name_or_scope=name_or_scope, **kwargs):
+        if metadata is None:
+            yield
+        else:
+            prev_metadata = default_graph_state().current_metadata
+            new_metadata = dict(prev_metadata)  # make a copy
+            new_metadata.update(metadata)
+            try:
+                default_graph_state().current_metadata = new_metadata
+                yield
+            finally:
+                default_graph_state().current_metadata = prev_metadata
 
 
 @hooked
@@ -91,44 +127,46 @@ def get_variable(name,
                  shape=None,
                  dtype=tf.float32,
                  initializer=None,
-                 regularizer=None,
-                 trainable=True,
-                 collections=None,
-                 caching_device=None,
-                 partitioner=None,
-                 validate_shape=True,
-                 custom_getter=None,
-                 **metadata):
+                 metadata=None,
+                 **kwargs):
     """
-    wrapper around tf.get_variable that takes in additional keyword arguments
-    as metadata and stores that metadata
+    wrapped version of tf.get_variable; differences:
+    - allows specifying optional metadata
+    - allows hooking of initializer
+    - default to zero init
     """
-    if initializer is None:
-        initializer = tf.constant_initializer(0.)
-    var = tf.get_variable(name=name,
-                          shape=shape,
-                          dtype=dtype,
-                          initializer=initializer,
-                          regularizer=regularizer,
-                          trainable=trainable,
-                          collections=collections,
-                          caching_device=caching_device,
-                          partitioner=partitioner,
-                          validate_shape=validate_shape,
-                          custom_getter=custom_getter)
-    metadata.update(dict(
+    # make a copy of currrent metadata
+    new_metadata = dict(default_graph_state().current_metadata)
+    # overwrite with given metadata
+    if metadata is not None:
+        new_metadata.update(metadata)
+    # also including these fields in the metadata because they may be
+    # useful
+    # e.g. for initialization
+    new_metadata.update(dict(
         name=name,
         shape=shape,
         dtype=dtype,
         initializer=initializer,
-        regularizer=regularizer,
-        trainable=trainable,
-        collections=collections,
-        caching_device=caching_device,
-        partitioner=partitioner,
-        validate_shape=validate_shape,
     ))
-    VARIABLE_METADATA.update(metadata)
+
+    @hooked
+    def get_initializer(metadata):
+        initializer = metadata["initializer"]
+        if initializer is None:
+            # use zero init as default instead of tensorflow's default
+            # magic one
+            # rationale: make it easier to spot initialization bugs
+            tf.constant_initializer(0.)
+        return initializer
+
+    new_initializer = get_initializer(new_metadata)
+    var = tf.get_variable(name=name,
+                          shape=shape,
+                          dtype=dtype,
+                          initializer=new_initializer,
+                          **kwargs)
+    default_graph_state().variable_metadata[var] = new_metadata
     return var
 
 # ################################# filters #################################
@@ -191,6 +229,7 @@ def filter_dsl(hook,
                         return hs()
                     vs_list = vs_list[vs_list.index(subset) + 1:]
             else:
+                # TODO allow searching by metadata
                 raise ValueError("wrong variable_scope type: %s" %
                                  variable_scope)
 
