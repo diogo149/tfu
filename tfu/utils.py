@@ -43,6 +43,13 @@ def smart_mul(x, y):
 smart_sum = functools.partial(smart_reduce, smart_add)
 smart_product = functools.partial(smart_reduce, smart_mul)
 
+# ################################ misc numpy ################################
+
+
+def is_ndarray(x):
+    return isinstance(x, np.ndarray)
+
+
 # ############################# misc tensorflow #############################
 
 
