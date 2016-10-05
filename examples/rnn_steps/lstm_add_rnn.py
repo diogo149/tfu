@@ -20,7 +20,7 @@ with tf.variable_scope("model",
                        initializer=tf.random_normal_initializer(stddev=0.2)):
     h = x
     h = tf.transpose(h, perm=(1, 0, 2))
-    with tfu.temporary_hook(tfu.inits.set_forget_bias_init(2.0)):
+    with tfu.temporary_hook(tfu.inits.set_lstm_forget_bias_init(2.0)):
         outputs, final_state = tfu.LSTMStep(NUM_HIDDEN).apply_layer(
             "rnn",
             [h],
