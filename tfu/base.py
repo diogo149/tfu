@@ -4,6 +4,8 @@ import contextlib
 import six
 import tensorflow as tf
 
+from . import utils
+
 # ############################### state class ###############################
 
 
@@ -126,8 +128,8 @@ def variable_scope(name_or_scope=None,
 @hooked
 def get_variable(name,
                  shape=None,
-                 dtype=tf.float32,
-                 initializer=tf.constant_initializer(0.),
+                 dtype=None,
+                 initial_value=0,
                  **metadata):
     """
     wrapped version of tf.get_variable; differences:
@@ -135,6 +137,8 @@ def get_variable(name,
     - allows specifying optional metadata
     - allows hooking of initializer
     - default to zero init
+    - auto-converting dtype
+    - only supporting initial value instead of initializer function
     """
     # make a copy of currrent metadata
     new_metadata = dict(default_graph_state().current_metadata)
@@ -147,18 +151,40 @@ def get_variable(name,
         name=name,
         shape=shape,
         dtype=dtype,
+        initial_value=initial_value,
     ))
 
     @hooked
-    def get_initializer(metadata):
-        return initializer
+    def get_initial_value(metadata):
+        shape = metadata["shape"]
+        initial_value = metadata["initial_value"]
+        dtype = metadata["dtype"]
+        # NOTE: we cast to dtype in this function as well, because the behavior
+        # of arithmetic on some inits may change depending on the dtype
+        # e.g. for int dtype, we might want to do integer arithmetic on it
+        if shape is None:
+            # assume initial value is already a tensor or numpy array
+            assert (utils.is_tensor(initial_value) or
+                    utils.is_ndarray(initial_value))
+            return tf.cast(initial_value, dtype)
+        else:
+            # if shape is given, assume that the output is a scalar
+            # to be created into the desired shape
+            if dtype is None:
+                dtype = tf.float32
+            if initial_value == 0:
+                return tf.zeros(shape, dtype)
+            else:
+                return initial_value * tf.ones(shape, dtype)
 
-    new_initializer = get_initializer(new_metadata)
+    new_initial_value = get_initial_value(new_metadata)
+    if dtype is not None:
+        new_initial_value = tf.cast(new_initial_value, dtype)
 
     var = tf.get_variable(name=name,
                           shape=shape,
-                          dtype=dtype,
-                          initializer=new_initializer)
+                          dtype=None,
+                          initializer=new_initial_value)
     default_graph_state().variable_metadata[var] = new_metadata
     return var
 
