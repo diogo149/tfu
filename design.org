@@ -1,0 +1,18 @@
+* how to do inits?
+- either:
+  - change initializer_op
+    - cons
+      - relies on implementation details
+      - might break with weird partition stuff
+  - use initializer
+    - cons
+      - ugly interface (w/ metadata)
+        - variable isn't created yet
+  - different step to initialize
+    - cons
+      - harder to do conditional initialization
+        - eg. orth init only for RNN matrix
+      - additional step
+- solution
+  - use initializer
+  - pass in metadata as dict instead
