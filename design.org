@@ -4,6 +4,7 @@
 - collections
 - custom_getter
 - variable search
+- optimizers
 * how to do inits?
 - either:
   - change initializer_op
