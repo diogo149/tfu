@@ -61,3 +61,5 @@
   - cleaner init code
 - seems like we get nothing from having initializer functions
   - the original rationale seems to be to have a function from metadata to value
+- also allows numpy initializers (eg. orthogonal) to behave the same way as more basic ones
+  - eg. heterogeneous inits could cause issues with random seed-ing
