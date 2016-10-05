@@ -11,8 +11,8 @@ def linear(name, tensor, num_units):
         W = base.get_variable(name="W",
                               shape=(num_inputs, num_units),
                               dtype=tensor.dtype,
-                              collections=[tf.GraphKeys.VARIABLES,
-                                           tf.GraphKeys.WEIGHTS],
+                              trainable=True,
+                              weight=True,
                               in_axes=[0],
                               out_axes=[1])
         return utils.dot(tensor, W)
@@ -26,8 +26,8 @@ def add_bias(name, tensor, axis=-1):
         b = base.get_variable(name="b",
                               shape=(num_units,),
                               dtype=tensor.dtype,
-                              collections=[tf.GraphKeys.VARIABLES,
-                                           tf.GraphKeys.BIASES])
+                              trainable=True,
+                              bias=True)
         if axis == -1:
             return tensor + b
         else:
@@ -45,8 +45,7 @@ def learned_scaling(name, tensor, axis=-1):
         scale = base.get_variable(name="scale",
                                   shape=(num_units,),
                                   dtype=tensor.dtype,
-                                  # TODO what collections should this have
-                                  collections=[tf.GraphKeys.VARIABLES])
+                                  trainable=True)
         scale = tf.exp(scale)
         if axis == -1:
             return tensor * scale
@@ -90,8 +89,8 @@ def multi_linear(names, tensor, num_units, split_output=True):
                 W = base.get_variable(name="W",
                                       shape=(num_inputs, n),
                                       dtype=tensor.dtype,
-                                      collections=[tf.GraphKeys.VARIABLES,
-                                                   tf.GraphKeys.WEIGHTS],
+                                      trainable=True,
+                                      weight=True,
                                       in_axes=[0],
                                       out_axes=[1])
                 Ws.append(W)
@@ -131,8 +130,8 @@ def conv2d(name,
             W = base.get_variable(name="W",
                                   shape=filter_shape,
                                   dtype=tensor.dtype,
-                                  collections=[tf.GraphKeys.VARIABLES,
-                                               tf.GraphKeys.WEIGHTS],
+                                  trainable=True,
+                                  weight=True,
                                   in_axes=[2],
                                   out_axes=[3])
         elif data_format == "NCHW":
@@ -144,8 +143,8 @@ def conv2d(name,
             W = base.get_variable(name="W",
                                   shape=filter_shape,
                                   dtype=tensor.dtype,
-                                  collections=[tf.GraphKeys.VARIABLES,
-                                               tf.GraphKeys.WEIGHTS],
+                                  trainable=True,
+                                  weight=True,
                                   in_axes=[2],
                                   out_axes=[3])
         else:
@@ -221,16 +220,15 @@ def batch_normalization(name, tensor, epsilon=1e-4):
         beta = base.get_variable("beta",
                                  shape=[num_units],
                                  dtype=tensor.dtype,
-                                 initializer=tf.constant_initializer(0.0),
-                                 collections=[tf.GraphKeys.VARIABLES,
-                                              tf.GraphKeys.BIASES,
-                                              "bn_beta"])
+                                 trainable=True,
+                                 bias=True,
+                                 bn_beta=True)
         gamma = base.get_variable("gamma",
                                   shape=[num_units],
                                   dtype=tensor.dtype,
                                   initializer=tf.constant_initializer(1.0),
-                                  collections=[tf.GraphKeys.VARIABLES,
-                                               "bn_gamma"])
+                                  trainable=True,
+                                  bn_gamma=True)
         mean, variance = tf.nn.moments(
             x=tensor,
             axes=[dim for dim in range(utils.ndim(tensor))

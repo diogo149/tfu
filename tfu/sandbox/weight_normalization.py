@@ -43,8 +43,8 @@ def weight_normalization_hook(**filter_dsl_kwargs):
                                      # shape=g_shape,
                                      dtype=w.dtype,
                                      initializer=norm,
-                                     collections=[tf.GraphKeys.VARIABLES,
-                                                  "weight_normalization_g"])
+                                     trainable=True,
+                                     weight_normalization_g=True)
 
             scale = g / norm
             return w * tfu.dimshuffle(scale, pattern=pattern)

@@ -38,7 +38,6 @@ def backprop_to_the_future_mean(current_mean,
                 name="rolling_grad",
                 shape=current_mean.get_shape(),
                 dtype=current_mean.dtype,
-                initializer=tf.constant_initializer(value=0.0),
                 trainable=False,
             )
 
