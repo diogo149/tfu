@@ -17,21 +17,19 @@ h = x
 
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
-    h = tfu.conv2d("conv1",
-                   h,
+    h = tfu.conv2d(h,
                    num_filters=16,
                    filter_size=(5, 5),
                    # strides=(2, 2)
-                   )
+                   name="conv1")
     # TODO add bias
     h = tf.nn.relu(h)
     h = tfu.max_pool2d(h, (2, 2))
-    h = tfu.conv2d("conv2",
-                   h,
+    h = tfu.conv2d(h,
                    num_filters=32,
                    filter_size=(5, 5),
                    # strides=(2, 2),
-                   )
+                   name="conv2")
     # TODO add bias
     h = tf.nn.relu(h)
     h = tfu.max_pool2d(h, (2, 2))

@@ -111,30 +111,31 @@ def multi_affine(names, tensor, num_units):
 
 
 @base.hooked
-def conv2d(name,
-           tensor,
+def conv2d(tensor,
            num_filters,
            filter_size,
            strides=(1, 1),
-           padding="SAME"):
+           padding="SAME",
+           name=None):
     assert isinstance(filter_size, tuple)
     assert utils.ndim(tensor) == 4
     with base.variable_scope(name):
-        strides = (1,) + strides + (1,)
-        num_channels = utils.get_shape_values(tensor)[3]
-        filter_shape = filter_size + (num_channels, num_filters)
-        W = base.get_variable(name="W",
-                              shape=filter_shape,
-                              dtype=tensor.dtype,
-                              trainable=True,
-                              weight=True,
-                              in_axes=[2],
-                              out_axes=[3])
-        return tf.nn.conv2d(input=tensor,
-                            filter=W,
-                            strides=strides,
-                            padding=padding,
-                            name=name)
+        with base.variable_scope("conv2d"):
+            strides = (1,) + strides + (1,)
+            num_channels = utils.get_shape_values(tensor)[3]
+            filter_shape = filter_size + (num_channels, num_filters)
+            W = base.get_variable(name="W",
+                                  shape=filter_shape,
+                                  dtype=tensor.dtype,
+                                  trainable=True,
+                                  weight=True,
+                                  in_axes=[2],
+                                  out_axes=[3])
+            return tf.nn.conv2d(input=tensor,
+                                filter=W,
+                                strides=strides,
+                                padding=padding,
+                                name=name)
 
 
 @base.hooked
