@@ -186,35 +186,6 @@ def global_avg_pool2d(tensor, name=None):
 
 
 @base.hooked
-def batch_normalization(name, tensor, epsilon=1e-4):
-    with base.variable_scope(name):
-        num_units = utils.get_shape_values(tensor)[1]
-        beta = base.get_variable("beta",
-                                 shape=[num_units],
-                                 dtype=tensor.dtype,
-                                 trainable=True,
-                                 bias=True,
-                                 bn_beta=True)
-        gamma = base.get_variable("gamma",
-                                  shape=[num_units],
-                                  dtype=tensor.dtype,
-                                  initial_value=1.0,
-                                  trainable=True,
-                                  bn_gamma=True)
-        mean, variance = tf.nn.moments(
-            x=tensor,
-            axes=[dim for dim in range(utils.ndim(tensor))
-                  if dim != 1],
-            keep_dims=True)
-        return tf.nn.batch_normalization(x=tensor,
-                                         mean=mean,
-                                         variance=variance,
-                                         offset=beta,
-                                         scale=gamma,
-                                         variance_epsilon=epsilon)
-
-
-@base.hooked
 def rnn_reduce(rnn_fn,
                tensors,
                initial_state,

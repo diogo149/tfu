@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import tfu
+import tfu.sandbox.batch_normalization as bn
 import du
 
 train, valid, test = du.tasks.image_tasks.mnist("float32")
@@ -18,10 +19,10 @@ h = tfu.flatten(x, 2)
 with tf.variable_scope("mlp",
                        initializer=tf.random_uniform_initializer(-0.05, 0.05)):
     h = tfu.linear(h, 512, "fc1")
-    h = tfu.batch_normalization("bn1", h)
+    h = bn.simple_batch_normalization(h, "bn1")
     h = tf.nn.relu(h)
     h = tfu.linear(h, 512, "fc2")
-    h = tfu.batch_normalization("bn2", h)
+    h = bn.simple_batch_normalization(h, "bn2")
     h = tf.nn.relu(h)
     h = tfu.affine(h, 10, name="logit")
 
