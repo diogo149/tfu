@@ -72,10 +72,10 @@ def simple_rnn_layer(name, tensor, state):
         def _step(tensors, state):
             z_, = tensors
             h_ = state
-            logit = z_ + linear(h_, num_units=num_units, "h_to_h")
+            logit = z_ + linear(h_, num_units=num_units, name="h_to_h")
             return nonlinearity(logit=logit)
 
-        outputs = rnn_reduce("rnn", _step, [z], h)
+        outputs = rnn_reduce(_step, [z], h, name="rnn")
         return outputs
 
 
@@ -115,7 +115,7 @@ def lstm_layer(name, tensor, state):
             new_h = tf.tanh(new_c) * o
             return {"h": new_h, "c": new_c}
 
-        outputs = rnn_reduce("rnn", _step, [x], state)
+        outputs = rnn_reduce(_step, [x], state, name="rnn")
         return outputs
 
 
@@ -159,7 +159,7 @@ def lstm_layer_old1(name, tensor, state):
             new_h = tf.tanh(new_c) * o
             return {"h": new_h, "c": new_c}
 
-        outputs = rnn_reduce("rnn", _step, zs_, state)
+        outputs = rnn_reduce(_step, zs_, state, name="rnn")
         return outputs
 
 
@@ -189,7 +189,7 @@ def lstm_layer_old2(name, tensor, state):
         new_c, new_h = new_state
         return {"h": new_h, "c": new_c}
 
-    outputs = rnn_reduce("rnn", _step, [x], state)
+    outputs = rnn_reduce(_step, [x], state, name="rnn")
     return outputs
 
 

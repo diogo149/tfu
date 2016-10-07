@@ -163,10 +163,10 @@ class RNNStep(object):
             initial_state = self.zero_state()
 
         if evaluation_type == "unrolled":
-            results = tf_utils.rnn_reduce(name=name,
-                                          rnn_fn=self,
+            results = tf_utils.rnn_reduce(rnn_fn=self,
                                           tensors=inputs,
-                                          initial_state=initial_state)
+                                          initial_state=initial_state,
+                                          name=name)
             return results
         elif evaluation_type in {"rnn", "dynamic_rnn"}:
             cell = self.to_cell()

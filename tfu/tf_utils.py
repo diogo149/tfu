@@ -215,10 +215,10 @@ def batch_normalization(name, tensor, epsilon=1e-4):
 
 
 @base.hooked
-def rnn_reduce(name,
-               rnn_fn,
+def rnn_reduce(rnn_fn,
                tensors,
-               initial_state):
+               initial_state,
+               name=None):
     # use set to make sure all tensors have same number of steps
     num_steps, = set(map(lambda x: utils.get_shape_values(x)[0], tensors))
     state = initial_state
