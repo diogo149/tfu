@@ -22,10 +22,10 @@ tfu.add_hook(tfu.hooks.default_kwargs_dsl(kwargs={"include_bias": True},
 
 with tf.variable_scope("mlp"):
     h = tfu.linear(h, 512, "fc1")
-    h = ln.layer_normalization("ln1", h)
+    h = ln.layer_normalization(h, "ln1")
     h = tf.nn.relu(h)
     h = tfu.linear(h, 512, "fc2")
-    h = ln.layer_normalization("ln2", h)
+    h = ln.layer_normalization(h, "ln2")
     h = tf.nn.relu(h)
     h = tfu.affine(h, 10, name="logit")
 
