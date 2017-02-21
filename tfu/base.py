@@ -112,6 +112,8 @@ def variable_scope(name_or_scope=None,
     - less arguments available
     - allows specifying optional metadata
     """
+    if default_name is None and name_or_scope is None:
+        name_or_scope = tf.get_variable_scope()
     with tf.variable_scope(name_or_scope=name_or_scope,
                            default_name=default_name,
                            reuse=reuse):

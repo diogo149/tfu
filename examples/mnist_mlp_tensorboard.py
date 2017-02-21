@@ -51,20 +51,20 @@ with tf.name_scope('adam'):
     # Op to update all variables according to their gradient
     train_step = optimizer.apply_gradients(grads_and_vars=grads)
 
-tf.scalar_summary("cost", cross_entropy)
-tf.scalar_summary("accuracy", accuracy)
+tf.summary.scalar("cost", cross_entropy)
+tf.summary.scalar("accuracy", accuracy)
 for var in tf.trainable_variables():
-    tf.histogram_summary(var.name, var)
+    tf.summary.histogram(var.name, var)
 for grad, var in grads:
-    tf.histogram_summary(var.name + '/gradient', grad)
-merged_summary_op = tf.merge_all_summaries()
+    tf.summary.histogram(var.name + '/gradient', grad)
+merged_summary_op = tf.summary.merge_all()
 
 
 with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
-    summary_writer = tf.train.SummaryWriter("./tensorflow_logs",
-                                            graph=tf.get_default_graph())
+    summary_writer = tf.summary.FileWriter("./tensorflow_logs",
+                                           graph=tf.get_default_graph())
 
     train_gen = to_minibatches(train, 50)
     for epoch_idx in range(10):

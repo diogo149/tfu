@@ -11,7 +11,7 @@ def test_initialize_uninitialized_variables():
                               initializer=tf.random_uniform_initializer())
         tfu.initialize_uninitialized_variables(sess)
         v1 = foo.eval()
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         v2 = foo.eval()
         nt.assert_not_equal(v1, v2)
         tfu.initialize_uninitialized_variables(sess)

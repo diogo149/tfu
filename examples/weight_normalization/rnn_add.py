@@ -37,7 +37,7 @@ v = add_task_minibatch(batch_size=BATCH_SIZE * 25,
                        max_length=LENGTH,
                        dtype="float32")
 
-tfu.sequentially_initialize_all_variables(sess)
+tfu.sequential_global_variables_initializer(sess)
 
 # train network
 try:

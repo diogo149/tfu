@@ -15,10 +15,10 @@ def bachelor_normalization(name, x, beta=0.95, epsilon=1e-4):
 
         # shift by mean
         current_mean = tf.reduce_mean(x,
-                                      reduction_indices=curr_indices,
+                                      axis=curr_indices,
                                       keep_dims=True)
         mix_mean = tf.reduce_mean(x,
-                                  reduction_indices=mix_indices,
+                                  axis=mix_indices,
                                   keep_dims=True)
         bttf_mu = bttf.bttf_mean(current_mean=current_mean)
         mu = beta * bttf_mu + (1 - beta) * mix_mean
@@ -30,17 +30,17 @@ def bachelor_normalization(name, x, beta=0.95, epsilon=1e-4):
         else:
             x2 = tf.square(x - mu)
         current_mean2 = tf.reduce_mean(x2,
-                                       reduction_indices=curr_indices,
+                                       axis=curr_indices,
                                        keep_dims=True)
         mix_mean2 = tf.reduce_mean(x2,
-                                   reduction_indices=mix_indices,
+                                   axis=mix_indices,
                                    keep_dims=True)
         bttf_mu2 = bttf.bttf_mean(current_mean=current_mean2,
                                   mean_initializer=1,
                                   name="bttf_mean2")
         mu2 = beta * bttf_mu2 + (1 - beta) * mix_mean2
 
-        scale = tfu.learned_scaling(tf.inv(tf.sqrt(mu2 + epsilon)),
+        scale = tfu.learned_scaling(tf.reciprocal(tf.sqrt(mu2 + epsilon)),
                                     axis=1)
         res = (x - mu) * scale
         res = tfu.add_bias(res, axis=1)
@@ -91,7 +91,7 @@ def to_minibatches(dataset, batch_size):
 
 accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 train_gen = to_minibatches(train, 500)
 for _ in range(25):

@@ -104,7 +104,7 @@ def lstm_layer(name, tensor, state):
                                     "h_to_cellgate",
                                     "h_to_outputgate",
                                     "h_to_inputgate"],
-                                   tf.concat(concat_dim=1, values=[x_, h_]),
+                                   tf.concat(values=[x_, h_], axis=1),
                                    num_units=num_units)
 
             f = tf.nn.sigmoid(results[0])

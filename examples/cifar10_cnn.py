@@ -48,7 +48,7 @@ train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
 
 accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 
 def to_minibatches(dataset, batch_size):

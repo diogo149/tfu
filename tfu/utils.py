@@ -143,7 +143,7 @@ def get_by_name(name, collection=None):
     """
     # TODO do we want this to work on regexes instead of exact string matches
     if collection is None:
-        collection = tf.GraphKeys.VARIABLES
+        collection = tf.GraphKeys.GLOBAL_VARIABLES
     coll = tf.get_collection(collection)
     if isinstance(name, six.string_types):
         return [var for var in coll if name in var.name]
@@ -245,7 +245,7 @@ def initialize_uninitialized_variables(session):
     session.run(tf.group(*init_list))
 
 
-def sequentially_initialize_all_variables(session):
+def sequential_global_variables_initializer(session):
     var_list = tf.all_variables()
     for var in var_list:
         session.run(var.initializer)
@@ -258,7 +258,7 @@ def list_reduce_mean(tensors):
     else:
         # TODO benchmark different indicies to do this over
         packed = tf.pack(tensors, axis=0)
-        return tf.reduce_mean(packed, reduction_indices=[0])
+        return tf.reduce_mean(packed, axis=[0])
 
 
 def dot(a, b, **kwargs):

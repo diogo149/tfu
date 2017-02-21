@@ -37,7 +37,7 @@ v = add_task_minibatch(batch_size=BATCH_SIZE * 25,
                        max_length=LENGTH,
                        dtype="float32")
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 # train network
 try:

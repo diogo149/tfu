@@ -60,7 +60,7 @@ def to_minibatches(dataset, batch_size):
 
 accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 train_gen = to_minibatches(train, 500)
 for _ in range(10):

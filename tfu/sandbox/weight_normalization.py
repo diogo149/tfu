@@ -15,7 +15,7 @@ def weight_normalization_hook(**filter_dsl_kwargs):
     of the original weight tensor, so that WN cancels out initially)
 
     NOTE: requires sequentially initializing variables
-    (eg. with tfu.sequentially_initialize_all_variables or
+    (eg. with tfu.sequential_global_variables_initializer or
     tfu.hooks.auto_initialize_variables)
     """
 

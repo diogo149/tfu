@@ -87,7 +87,7 @@ def test_fn(sess, test_m):
 
 
 sess = tf.InteractiveSession()
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 datamaps = nlp_tasks.penn_treebank_char("int32")
 datamaps = map(lambda dm: nlp_tasks.one_hot_x(dm, 50, "float32"), datamaps)

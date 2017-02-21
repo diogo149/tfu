@@ -22,14 +22,14 @@ with tf.variable_scope("mlp",
     h = tf.nn.relu(h)
     h = tfu.affine(h, 1, name="logit")
 
-y = tf.nn.sigmoid(tf.squeeze(h, squeeze_dims=[1]))
+y = tf.nn.sigmoid(tf.squeeze(h, axis=[1]))
 
 cross_entropy = tf.reduce_mean(tfu.binary_cross_entropy(y, y_))
 accuracy = tf.reduce_mean(tfu.binary_accuracy(y, y_))
 
 train_step = tf.train.AdamOptimizer().minimize(cross_entropy)
 
-sess.run(tf.initialize_all_variables())
+sess.run(tf.global_variables_initializer())
 
 for i in range(1, 100 + 1):
     acc, _ = sess.run([accuracy, train_step],

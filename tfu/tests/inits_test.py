@@ -11,6 +11,6 @@ def test_scale_inits():
                 b = tfu.get_variable("b",
                                      shape=(),
                                      initial_value=2.0)
-            sess.run(tf.initialize_all_variables())
+            sess.run(tf.global_variables_initializer())
             res = sess.run(b)
             assert res == 6.0

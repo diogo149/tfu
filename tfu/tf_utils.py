@@ -98,7 +98,7 @@ def multi_linear(names, tensor, num_units, split_output=True):
                                       in_axes=[0],
                                       out_axes=[1])
                 Ws.append(W)
-        W_concat = tf.concat(concat_dim=1, values=Ws)
+        W_concat = tf.concat(values=Ws, axis=1)
         combined = utils.dot(tensor, W_concat)
         if split_output:
             return split_axis(combined, axis=-1, sizes=num_units)
@@ -145,6 +145,39 @@ def conv2d(tensor,
 
 
 @base.hooked
+def conv2d_transpose(tensor,
+                     num_filters,
+                     filter_size,
+                     strides=(1, 1),
+                     padding="SAME",
+                     name=None):
+    assert isinstance(filter_size, tuple)
+    assert utils.ndim(tensor) == 4
+    with base.variable_scope(name):
+        with base.variable_scope("conv2d"):
+            strides = (1,) + strides + (1,)
+            num_channels = utils.get_shape_values(tensor)[3]
+            filter_shape = filter_size + (num_channels, num_filters)
+            W = base.get_variable(name="W",
+                                  shape=filter_shape,
+                                  dtype=tensor.dtype,
+                                  trainable=True,
+                                  weight=True,
+                                  in_axes=[2],
+                                  out_axes=[3])
+            output_shape = utils.get_shape_symbolic(tensor)
+            for idx, stride in enumerate(strides):
+                if stride != 1:
+                    output_shape[idx] *= stride
+            return tf.nn.conv2d_transpose(value=tensor,
+                                          filter=W,
+                                          output_shape=output_shape,
+                                          strides=strides,
+                                          padding=padding,
+                                          name=name)
+
+
+@base.hooked
 def max_pool2d(tensor,
                ksize,
                strides=None,
@@ -188,7 +221,7 @@ def global_avg_pool2d(tensor, name=None):
                          strides=ksize,
                          padding="VALID",
                          name=name)
-    return tf.squeeze(res, squeeze_dims=[1, 2])
+    return tf.squeeze(res, axis=[1, 2])
 
 
 @base.hooked
@@ -225,7 +258,7 @@ def categorical_cross_entropy(pred, target, axis=1):
                             axis=axis,
                             dtype=pred.dtype)
     return -tf.reduce_sum(target * tf.log(pred),
-                          reduction_indices=[axis])
+                          axis=[axis])
 
 
 @base.hooked
@@ -258,7 +291,7 @@ def binary_accuracy(pred, target):
 def categorical_accuracy(pred, target, axis=1):
     if target.dtype != tf.int64:
         # NOTE: assuming that it is one-hot encoded if not int64
-        target = tf.argmax(target, dimension=axis)
-    class_preds = tf.argmax(pred, dimension=axis)
+        target = tf.argmax(target, axis=axis)
+    class_preds = tf.argmax(pred, axis=axis)
     return tf.cast(tf.equal(class_preds, target),
                    pred.dtype)

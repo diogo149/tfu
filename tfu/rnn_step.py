@@ -8,7 +8,7 @@ from . import tf_utils
 class RNNStep(object):
 
     """
-    more general abstraction for RNN's than tf.nn.rnn_cell.RNNCell
+    more general abstraction for RNN's than tf.contrib.rnn.RNNCell
     - allows keeping multiple states
       - eg. both cell and hidden in LSTM
     """
@@ -185,7 +185,7 @@ class RNNStep(object):
             initial_cell_state = tuple(initial_cell_state)
 
             if evaluation_type == "rnn":
-                outputs, final_cell_state = tf.nn.rnn(
+                outputs, final_cell_state = tf.nn.raw_rnn(
                     cell,
                     inputs=zip(*map(tf.unpack, inputs)),
                     initial_state=initial_cell_state)
@@ -215,7 +215,7 @@ class RNNStep(object):
         return tf.group(*ops)
 
 
-class RNNStepToCell(tf.nn.rnn_cell.RNNCell):
+class RNNStepToCell(tf.contrib.rnn.RNNCell):
 
     def __init__(self, step):
         self.step = step
