@@ -295,3 +295,14 @@ def categorical_accuracy(pred, target, axis=1):
     class_preds = tf.argmax(pred, axis=axis)
     return tf.cast(tf.equal(class_preds, target),
                    pred.dtype)
+
+
+@base.hooked
+def leaky_relu(x, leak=0, name="leaky_relu"):
+    """
+    from https://github.com/tensorflow/tensorflow/issues/4079
+    """
+    with base.variable_scope(name):
+        f1 = 0.5 * (1 + leak)
+        f2 = 0.5 * (1 - leak)
+        return f1 * x + f2 * abs(x)
