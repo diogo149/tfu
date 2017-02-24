@@ -40,6 +40,7 @@ def smart_mul(x, y):
     else:
         return x * y
 
+
 smart_sum = functools.partial(smart_reduce, smart_add)
 smart_product = functools.partial(smart_reduce, smart_mul)
 
@@ -273,3 +274,52 @@ def dot(a, b, **kwargs):
     res_shape = (get_shape_symbolic(a)[:-1] +
                  [get_shape_symbolic(b)[1]])
     return smart_reshape(res, res_shape)
+
+
+def swapaxes(x, axes):
+    ax1, ax2 = axes
+    perm = list(range(ndim(x)))
+    if perm[ax1] == perm[ax2]:
+        # don't perform transpose if axes are the same
+        return x
+    perm[ax1], perm[ax2] = perm[ax2], perm[ax1]
+    return tf.transpose(x, perm=perm)
+
+
+def _axis_apply(old_axis, new_axis, fn, x):
+    """
+    util for applying a function on one axis to other axes
+    """
+    axes = [old_axis, new_axis]
+    tmp = swapaxes(x, axes)
+    res = fn(tmp)
+    return swapaxes(res, axes)
+
+
+def sort(x, axis=-1, increasing=True):
+    assert increasing  # TODO
+
+    def sort_inner(x):
+        return tf.nn.top_k(x, k=get_shape_symbolic(x)[-1]).values
+
+    return _axis_apply(old_axis=-1,
+                       new_axis=axis,
+                       fn=sort_inner,
+                       x=x)
+
+
+def sort_by(x, vector, axis=-1, increasing=True):
+    """
+    sorts along a given axis, according to an index
+    """
+    assert increasing  # TODO
+    vec_len, = get_shape_symbolic(vector)
+    indices = tf.nn.top_k(vector, k=vec_len).indices
+
+    def sort_by_inner(x):
+        return tf.gather(x, indices)
+
+    return _axis_apply(old_axis=0,
+                       new_axis=axis,
+                       fn=sort_by_inner,
+                       x=x)
