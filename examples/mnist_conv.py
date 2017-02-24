@@ -15,8 +15,9 @@ y_ = tf.placeholder(tf.int64, shape=[None])
 
 h = x
 
-with tf.variable_scope("mlp",
-                       initializer=tf.random_uniform_initializer(-0.05, 0.05)):
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.xavier_normal))
+
+with tf.variable_scope("mlp"):
     h = tfu.conv2d(h,
                    num_filters=16,
                    filter_size=(5, 5),
@@ -63,7 +64,7 @@ accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y_))
 sess.run(tf.global_variables_initializer())
 
 train_gen = to_minibatches(train, 500)
-for _ in range(10):
+for _ in range(25):
     with du.timer("epoch"):
         for i in range(100):
             batch = train_gen.next()

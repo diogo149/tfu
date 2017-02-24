@@ -15,8 +15,9 @@ keep_prob = tf.placeholder(tf.float32)
 
 h = tfu.flatten(x, 2)
 
-with tf.variable_scope("mlp",
-                       initializer=tf.random_uniform_initializer(-0.05, 0.05)):
+tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.xavier_normal))
+
+with tf.variable_scope("mlp"):
     h = tfu.affine(h, 512, name="fc1")
     h = tf.nn.relu(h)
     h = tf.nn.dropout(h, keep_prob=keep_prob)
