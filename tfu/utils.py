@@ -1,4 +1,5 @@
 import functools
+import io
 import six
 import numpy as np
 import tensorflow as tf
@@ -323,3 +324,35 @@ def sort_by(x, vector, axis=-1, increasing=True):
                        new_axis=axis,
                        fn=sort_by_inner,
                        x=x)
+
+# ############################## plotting utils ##############################
+
+
+def pyplot_to_png_bytes():
+    import matplotlib.pyplot as plt
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    return buf.getvalue()
+
+
+def png_bytes_to_image_summary(name, png_bytes=None):
+    """
+    returns a placeholder as well as the summary if png_bytes is None
+    """
+    if png_bytes is None:
+        _bytes = tf.placeholder(tf.string)
+    else:
+        _bytes = png_bytes
+
+    # convert png to TF image
+    img = tf.image.decode_png(_bytes, channels=4)
+    # add batch dimension
+    imgs = tf.expand_dims(img, 0)
+    # create summary
+    summary_op = tf.summary.image(name, imgs)
+
+    if png_bytes is None:
+        return _bytes, summary_op
+    else:
+        return summary_op
