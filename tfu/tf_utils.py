@@ -157,7 +157,7 @@ def conv2d_transpose(tensor,
         with base.variable_scope("conv2d"):
             strides = (1,) + strides + (1,)
             num_channels = utils.get_shape_values(tensor)[3]
-            filter_shape = filter_size + (num_channels, num_filters)
+            filter_shape = filter_size + (num_filters, num_channels)
             W = base.get_variable(name="W",
                                   shape=filter_shape,
                                   dtype=tensor.dtype,
@@ -169,6 +169,7 @@ def conv2d_transpose(tensor,
             for idx, stride in enumerate(strides):
                 if stride != 1:
                     output_shape[idx] *= stride
+            output_shape[-1] = num_filters
             return tf.nn.conv2d_transpose(value=tensor,
                                           filter=W,
                                           output_shape=output_shape,
