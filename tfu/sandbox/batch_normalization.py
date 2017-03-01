@@ -6,7 +6,7 @@ import tfu
 def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
-            num_units = tfu.get_shape_values(tensor)[1]
+            num_units = tfu.get_shape_values(tensor)[-1]
             beta = tfu.get_variable("beta",
                                     shape=[num_units],
                                     dtype=tensor.dtype,
@@ -21,8 +21,7 @@ def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
                                      bn_gamma=True)
             mean, variance = tf.nn.moments(
                 x=tensor,
-                axes=[dim for dim in range(tfu.ndim(tensor))
-                      if dim != 1],
+                axes=list(range(tfu.ndim(tensor) - 1)),
                 keep_dims=True)
             return tf.nn.batch_normalization(x=tensor,
                                              mean=mean,
@@ -40,7 +39,7 @@ def ema_batch_normalization(tensor,
                             name=None):
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
-            num_units = tfu.get_shape_values(tensor)[1]
+            num_units = tfu.get_shape_values(tensor)[-1]
             beta = tfu.get_variable("beta",
                                     shape=[num_units],
                                     dtype=tensor.dtype,
@@ -54,15 +53,9 @@ def ema_batch_normalization(tensor,
                                      trainable=True,
                                      bn_gamma=True)
 
-            pattern = ["x"] * tfu.ndim(tensor)
-            pattern[1] = 0
-            gamma = tfu.dimshuffle(gamma, pattern)
-            beta = tfu.dimshuffle(beta, pattern)
-
             mean, variance = tf.nn.moments(
                 x=tensor,
-                axes=[dim for dim in range(tfu.ndim(tensor))
-                      if dim != 1],
+                axes=list(range(tfu.ndim(tensor) - 1)),
                 keep_dims=True)
             inv_std = tf.reciprocal(tf.sqrt(variance + epsilon))
             mu = tfu.get_variable("mu",
