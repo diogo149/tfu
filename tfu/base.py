@@ -99,6 +99,17 @@ def temporary_hook(fn, location="outer"):
     finally:
         remove_hook(fn)
 
+
+@contextlib.contextmanager
+def temporary_hooks(fns, location="outer"):
+    try:
+        for fn in fns:
+            add_hook(fn, location=location)
+        yield
+    finally:
+        for fn in fns:
+            remove_hook(fn)
+
 # ################## modified variable_scope / get_variable ##################
 
 

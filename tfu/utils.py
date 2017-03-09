@@ -325,6 +325,27 @@ def sort_by(x, vector, axis=-1, increasing=True):
                        fn=sort_by_inner,
                        x=x)
 
+# ############################## summary utils ##############################
+
+
+def dict_to_scalar_summary(x):
+    values = []
+    for k, v in sorted(x.items()):
+        values.append(tf.summary.Summary.Value(tag=k,
+                                               simple_value=v))
+    return tf.summary.Summary(value=values)
+
+
+def scalar_summary_to_dict(summ):
+    res = {}
+    assert isinstance(summ, tf.summary.Summary)
+    for value in summ.value:
+        assert isinstance(value, tf.summary.Summary.Value)
+        print repr(value.histo)
+        if hasattr(value, "simple_value") and value.histo.ByteSize() == 0:
+            res[value.tag] = value.simple_value
+    return res
+
 # ############################## plotting utils ##############################
 
 
