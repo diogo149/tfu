@@ -20,3 +20,4 @@ from .rnn_steps import *
 from . import hooks
 from . import inits
 from . import costs
+from . import updates

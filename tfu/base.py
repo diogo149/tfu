@@ -4,6 +4,8 @@ import contextlib
 import six
 import tensorflow as tf
 
+import du
+
 from . import utils
 
 # ############################### state class ###############################
@@ -18,8 +20,9 @@ class GraphState(object):
         self.variable_metadata = {}
         self.current_metadata = {}
         self.hooks = []
-        self.accumulators = []
+        self.updates_accumulators = []
         self.misc = {}
+
 
 DEFAULT_GRAPH_STATE = [GraphState(graph=tf.get_default_graph())]
 
@@ -172,19 +175,20 @@ def get_variable(name,
         shape = metadata["shape"]
         initial_value = metadata["initial_value"]
         dtype = metadata["dtype"]
+        if dtype is None:
+            dtype = tf.float32
         # NOTE: we cast to dtype in this function as well, because the behavior
         # of arithmetic on some inits may change depending on the dtype
         # e.g. for int dtype, we might want to do integer arithmetic on it
         if shape is None:
             # assume initial value is already a tensor or numpy array
             assert (utils.is_tensor(initial_value) or
-                    utils.is_ndarray(initial_value))
+                    utils.is_ndarray(initial_value) or
+                    utils.is_number(initial_value))
             return tf.cast(initial_value, dtype)
         else:
             # if shape is given, assume that the output is a scalar
             # to be created into the desired shape
-            if dtype is None:
-                dtype = tf.float32
             if initial_value == 0:
                 return tf.zeros(shape, dtype)
             else:
@@ -194,10 +198,15 @@ def get_variable(name,
     if dtype is not None:
         new_initial_value = tf.cast(new_initial_value, dtype)
 
+    # TODO stop using get_variable
+    # only important functionality is adding to global and trainable variables
+    # collections
     var = tf.get_variable(name=name,
                           shape=None,
                           dtype=None,
-                          initializer=new_initial_value)
+                          initializer=new_initial_value,
+                          # defaulting trainable to False is not specified
+                          trainable=new_metadata.get("trainable", False))
     default_graph_state().variable_metadata[var] = new_metadata
     return var
 
@@ -315,61 +324,101 @@ def filter_dsl(hook,
 
     return filter_dsl_inner
 
-# ############################### accumulators ###############################
+# ########################### tensorflow function ###########################
 
 
-class Accumulator(object):
+class TensorflowFunction(object):
 
     def __init__(self,
+                 sess=None,
+                 inputs=None,
+                 outputs=None,
+                 ops=None,
+                 options=None,
+                 run_metadata=None,
+                 name=None):
+        """
+        if name is given, function is timed
+        """
+        if sess is None:
+            sess = tf.get_default_session()
+        if inputs is None:
+            inputs = {}
+        if outputs is None:
+            outputs = {}
+        if ops is None:
+            ops = []
+        assert sess is not None
+        assert isinstance(inputs, dict)
+        assert isinstance(outputs, dict)
+        assert isinstance(ops, list)
+
+        self.sess = sess
+        self.inputs = inputs
+        self.outputs = outputs
+        self.ops = ops
+        self.options = options
+        self.run_metadata = run_metadata
+        self.name = name
+
+        self._input_keys = list(inputs.keys())
+        self._output_keys = []
+        self._output_values = []
+        for k, v in outputs.items():
+            self._output_keys.append(k)
+            self._output_values.append(v)
+
+        self._fetches = self.output_values + ops
+
+    def __call__(self, datamap):
+        if self.name is None:
+            return self._internal_call(datamap)
+        else:
+            with du.timer(self.name):
+                return self._internal_call(datamap)
+
+    def _internal_call(self, datamap):
+        if not self._input_keys:
+            feed_dict = None
+        else:
+            feed_dict = {self.inputs[k]: datamap[k] for k in self._input_keys}
+
+        res = self.sess.run(fetches=self._fetches,
+                            feed_dict=feed_dict,
+                            options=self.options,
+                            run_metadata=self.run_metadata)
+
+        return {k: v for k, v in zip(self._output_keys, res)}
+
+
+tf_fn = TensorflowFunction
+
+
+# ########################### updates accumulator ###########################
+
+
+class UpdatesAccumulator(object):
+
+    def __init__(self,
+                 merge_strategy="raise",
                  variable_scope=None,
                  **metadata):
-        # TODO filtering based on variable scope
+        # TODO implement filtering based on variable scope
         assert variable_scope is None
+        self.merge_strategy = merge_strategy
         self.metadata = metadata
-        self.values = []
+        self.updates = collections.OrderedDict()
 
     def __enter__(self):
-        assert self not in default_graph_state().accumulators
-        default_graph_state().accumulators.append(self)
+        assert self not in default_graph_state().updates_accumulators
+        default_graph_state().updates_accumulators.append(self)
         return self
 
     def __exit__(self, type, value, tb):
-        while self in default_graph_state().accumulators:
-            default_graph_state().accumulators.remove(self)
+        while self in default_graph_state().updates_accumulators:
+            default_graph_state().updates_accumulators.remove(self)
         # don't supress any exception
         return False
-
-    def accumulate(self, value):
-        self.values.append(value)
-
-
-class UpdatesAccumulator(Accumulator):
-
-    def __init__(self, merge_strategy="raise",
-                 variable_scope=None,
-                 **metadata):
-        self.merge_strategy = merge_strategy
-        self.updates = collections.OrderedDict()
-        super(UpdatesAccumulator, self).__init__(variable_scope,
-                                                 update_dict=True,
-                                                 **metadata)
-
-    def accumulate(self, updates):
-        for k, v in updates.items():
-            # make sure we aren't overwritting anything
-            if k not in self.updates:
-                self.updates[k] = v
-            else:
-                if self.merge_strategy == "raise":
-                    raise ValueError("key already in updates accumulator: %s" %
-                                     k)
-                elif self.merge_strategy == "add":
-                    self.updates[k] = self.updates[k] + v - k
-                elif self.merge_strategy == "overwrite":
-                    self.updates[k] = v
-                else:
-                    raise ValueError("unknown merge_strategy: %s" %
-                                     self.merge_strategy)
 
     def to_op(self):
         ops = []
@@ -378,23 +427,31 @@ class UpdatesAccumulator(Accumulator):
         return tf.group(*ops)
 
 
-def accumulate(value, required=False, **metadata):
-    accumulated = False
-    for acc in default_graph_state().accumulators:
+def register_updates(updates, required=False, **metadata):
+    registered = False
+    if isinstance(updates, list):
+        updates = collections.OrderedDict(updates)
+    assert isinstance(updates, collections.OrderedDict)
+    for acc in default_graph_state().updates_accumulators:
         for k, v in acc.metadata.items():
             if metadata.get(k) != v:
                 break
         else:
-            acc.accumulate(value)
-            accumulated = True
-    if required and not accumulated:
-        raise Exception("required accumulation failed")
-
-
-def accumulate_update_dict(updates, **kwargs):
-    if isinstance(updates, list):
-        updates = collections.OrderedDict(updates)
-    assert isinstance(updates, collections.OrderedDict)
-    accumulate(value=updates,
-               update_dict=True,
-               **kwargs)
+            for k, v in updates.items():
+                # make sure we aren't overwritting anything
+                if k not in acc.updates:
+                    acc.updates[k] = v
+                else:
+                    if acc.merge_strategy == "raise":
+                        raise ValueError("key already in updates accumulator: %s" %
+                                         k)
+                    elif acc.merge_strategy == "add":
+                        acc.updates[k] = acc.updates[k] + v - k
+                    elif acc.merge_strategy == "overwrite":
+                        acc.updates[k] = v
+                    else:
+                        raise ValueError("unknown merge_strategy: %s" %
+                                         acc.merge_strategy)
+            registered = True
+    if required and not registered:
+        raise Exception("required update was not registered")

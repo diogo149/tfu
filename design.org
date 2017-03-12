@@ -85,3 +85,5 @@
       - ideally we want to use the same-ish for monitoring
 - solution:
   - accumulator that maintains an OrderedDict + shared accumulator base class
+- should we just use control_dependencies?
+  - no, because that makes update implicit (more likely that we end up doing updates during test time)
