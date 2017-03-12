@@ -5,6 +5,9 @@ from . import base
 
 
 def scale_inits(scale, **filter_dsl_kwargs):
+    """
+    NOTE: this scales all inits, not just weights
+    """
     if scale == "relu":
         scale = float(np.sqrt(2))
 
@@ -17,6 +20,23 @@ def scale_inits(scale, **filter_dsl_kwargs):
                            **filter_dsl_kwargs)
 
 # ############################### weight inits ###############################
+
+
+def scale_weight_inits(scale, **filter_dsl_kwargs):
+    if scale == "relu":
+        scale = float(np.sqrt(2))
+
+    def scale_inits_inner(hs):
+        metadata = hs.args[0]
+        res = hs()
+        if metadata.get("weight"):
+            return res * scale
+        else:
+            return res
+
+    return base.filter_dsl(scale_inits_inner,
+                           key="get_initial_value",
+                           **filter_dsl_kwargs)
 
 
 def set_weight_init(weight_init, **filter_dsl_kwargs):
