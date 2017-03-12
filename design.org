@@ -87,3 +87,17 @@
   - accumulator that maintains an OrderedDict + shared accumulator base class
 - should we just use control_dependencies?
   - no, because that makes update implicit (more likely that we end up doing updates during test time)
+* tf_fn
+- want to wrap run calls in an easy package
+- desired features:
+  - auto-time
+  - ability to pass in ops
+  - treat updates accumulators as an op
+  - treat summary accumulators as an op
+* summary accumulator
+- features
+  - convert the bytes to summary objects
+  - store a history of summary objects
+  - auto-write to the appropriate file using add_file_writer method
+    - should take in a string or a file writer
+    - integrate with printing (the du summary object)

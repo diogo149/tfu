@@ -5,6 +5,7 @@ import six
 import tensorflow as tf
 
 import du
+import du.sandbox.summary
 
 from . import utils
 
@@ -21,6 +22,7 @@ class GraphState(object):
         self.current_metadata = {}
         self.hooks = []
         self.updates_accumulators = []
+        self.summary_accumulators = []
         self.misc = {}
 
 
@@ -478,6 +480,70 @@ def register_updates(updates, required=False, **metadata):
                     else:
                         raise ValueError("unknown merge_strategy: %s" %
                                          acc.merge_strategy)
+            registered = True
+    if required and not registered:
+        raise Exception("required update was not registered")
+
+# ########################### summary accumulator ###########################
+
+
+class SummaryAccumulator(TensorFlowFunctionOp):
+
+    def __init__(self,
+                 variable_scope=None,
+                 **metadata):
+        # TODO implement filtering based on variable scope
+        assert variable_scope is None
+        self.metadata = metadata
+        self.summaries = []
+        self.file_writers = []
+        self.summary_printers = []
+        self.history = []
+
+    def __enter__(self):
+        assert self not in default_graph_state().summary_accumulators
+        default_graph_state().summary_accumulators.append(self)
+        return self
+
+    def __exit__(self, type, value, tb):
+        while self in default_graph_state().summary_accumulators:
+            default_graph_state().summary_accumulators.remove(self)
+        # don't supress any exception
+        return False
+
+    def to_op(self):
+        return tf.summary.merge(self.summaries)
+
+    def handle_result(self, op_res):
+        summ = tf.summary.Summary(op_res)
+        summ_dict = utils.scalar_summary_to_dict(summ)
+        for file_writer in self.file_writers:
+            # FIXME implement this
+            # question: how to handle global step
+            assert False
+        for summary_printer in self.summary_printers:
+            summary_printer.update(summ_dict)
+            print(summary_printer.to_org_list())
+
+    def add_file_writer(self, file_writer):
+        if isinstance(file_writer, six.string_types):
+            # if string, then it is a logdir
+            file_writer = tf.summary.FileWriter(logdir=file_writer)
+        self.file_writers.append(file_writer)
+
+    def add_summary_printer(self, summary_printer):
+        assert isinstance(summary_printer, du.sandbox.summary.Summary)
+        self.summary_printers.append(summary_printer)
+
+
+def register_summary(summary, required=False, **metadata):
+    registered = False
+    for acc in default_graph_state().summary_accumulators:
+        for k, v in acc.metadata.items():
+            if metadata.get(k) != v:
+                break
+        else:
+            acc.summaries.append(summary)
             registered = True
     if required and not registered:
         raise Exception("required update was not registered")
