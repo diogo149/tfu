@@ -1,5 +1,6 @@
 import functools
 import io
+import numbers
 import six
 import numpy as np
 import tensorflow as tf
@@ -44,6 +45,17 @@ def smart_mul(x, y):
 
 smart_sum = functools.partial(smart_reduce, smart_add)
 smart_product = functools.partial(smart_reduce, smart_mul)
+
+# ############################### misc python ###############################
+
+
+def is_number(x):
+    return isinstance(x, numbers.Number)
+
+
+def is_integral(x):
+    return isinstance(x, numbers.Integral)
+
 
 # ################################ misc numpy ################################
 
