@@ -324,10 +324,24 @@ def filter_dsl(hook,
 
     return filter_dsl_inner
 
+
 # ########################### tensorflow function ###########################
 
+class TensorFlowFunctionOp(object):
 
-class TensorflowFunction(object):
+    """
+    base class for objects which want to be treated as an op by
+    TensorFlowFunction
+    """
+
+    def to_op(self):
+        raise NotImplementedError()
+
+    def handle_result(self, op_res):
+        pass
+
+
+class TensorFlowFunction(object):
 
     def __init__(self,
                  sess=None,
@@ -368,7 +382,13 @@ class TensorflowFunction(object):
             self._output_keys.append(k)
             self._output_values.append(v)
 
-        self._fetches = self.output_values + ops
+        self._op_fetches = []
+        for op in ops:
+            if isinstance(op, TensorFlowFunctionOp):
+                op = op.to_op()
+            self._op_fetches.append(op)
+
+        self._fetches = self._output_values + self._op_fetches
 
     def __call__(self, datamap):
         if self.name is None:
@@ -388,16 +408,22 @@ class TensorflowFunction(object):
                             options=self.options,
                             run_metadata=self.run_metadata)
 
-        return {k: v for k, v in zip(self._output_keys, res)}
+        output_res = res[:len(self._outputs)]
+        ops_res = res[-len(self.ops):]
+
+        for op, op_res in zip(self.ops, ops_res):
+            if isinstance(op, TensorFlowFunctionOp):
+                op.handle_result(op_res)
+
+        return {k: v for k, v in zip(self._output_keys, output_res)}
 
 
-tf_fn = TensorflowFunction
-
+tf_fn = TensorFlowFunction
 
 # ########################### updates accumulator ###########################
 
 
-class UpdatesAccumulator(object):
+class UpdatesAccumulator(TensorFlowFunctionOp):
 
     def __init__(self,
                  merge_strategy="raise",
