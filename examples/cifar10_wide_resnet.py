@@ -128,10 +128,8 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             tfu.softmax_cross_entropy_with_logits(h, y))
         accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y))
 
-        # FIXME add L2 cost
-        # l2 = thu.costs.l2()
-        l2 = 0
-        cost = cross_entropy + l2 * 1e-4
+        l2 = tfu.costs.l2()
+        cost = cross_entropy + l2 * 2e-4
 
         return dict(
             cross_entropy=cross_entropy,
