@@ -33,7 +33,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     y = tf.placeholder(tf.int64, [None], name="y")
 
     tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.msr_normal))
-    # FIXME make sure this works
+    # FIXME replace with scale_weight_inits
     tfu.add_hook(tfu.inits.scale_inits(scale=np.sqrt(2)))
     tfu.add_hook(tfu.hooks.default_kwargs_dsl(kwargs={"filter_size": (3, 3)},
                                               key="conv2d"))
@@ -154,11 +154,19 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
         update_lr_op = tf.assign(learning_rate, learning_rate * 0.2)
         # thu.updates.nesterov_momentum(train_outputs["cost"],
         #                               learning_rate=learning_rate)
-        train_op = tf.train.MomentumOptimizer(
-            learning_rate=learning_rate,
-            momentum=0.9,
-            use_nesterov=True,
-        ).minimize(train_outputs["cost"])
+        if 0:
+            train_op = tf.train.MomentumOptimizer(
+                learning_rate=learning_rate,
+                momentum=0.9,
+                use_nesterov=True,
+            ).minimize(train_outputs["cost"])
+        else:
+            with tfu.variable_scope("optimizer"):
+                updates = tfu.updates.nesterov_momentum(
+                    loss_or_grads=train_outputs["cost"],
+                    learning_rate=learning_rate
+                )
+            train_op = tf.group(*[tf.assign(k, v) for k, v in updates.items()])
 
     with tfu.temporary_hooks([
             # FIXME
