@@ -101,3 +101,13 @@
   - auto-write to the appropriate file using add_file_writer method
     - should take in a string or a file writer
     - integrate with printing (the du summary object)
+* counter
+- question: how to handle global step for summary file_writer
+- interface
+  - tfu.counter.make_default_counter(expected_count=None)
+  - Counter.step()
+  - Counter.as_default()
+  - tfu.counter.step()
+  - tfu.counter.count()
+  - tfu.counter.count_value()
+  - tfu.counter.progress()

@@ -23,6 +23,7 @@ class GraphState(object):
         self.hooks = []
         self.updates_accumulators = []
         self.summary_accumulators = []
+        self.global_step_counter = None
         self.misc = {}
 
 
@@ -518,9 +519,8 @@ class SummaryAccumulator(TensorFlowFunctionOp):
         summ = tf.summary.Summary(op_res)
         summ_dict = utils.scalar_summary_to_dict(summ)
         for file_writer in self.file_writers:
-            # FIXME implement this
-            # question: how to handle global step
-            assert False
+            global_step = default_graph_state().global_step_counter._count_value
+            file_writer.add_summary(summary=summ, global_step=global_step)
         for summary_printer in self.summary_printers:
             summary_printer.update(summ_dict)
             print(summary_printer.to_org_list())
