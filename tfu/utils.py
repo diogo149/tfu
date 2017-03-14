@@ -57,11 +57,36 @@ def is_integral(x):
     return isinstance(x, numbers.Integral)
 
 
+def identity(x):
+    return x
+
+
 # ################################ misc numpy ################################
 
 
 def is_ndarray(x):
     return isinstance(x, np.ndarray)
+
+
+# ############################### misc datamap ###############################
+
+
+def datamap_merge(datamaps, scalar_merge="mean"):
+    """
+    concatenates datamaps along axis 0, and merges scalars using a given method
+    """
+    if scalar_merge == "mean":
+        scalar_merge = np.mean
+    elif scalar_merge == "identity":
+        scalar_merge = identity
+    res = {}
+    for key in datamaps[0].keys():  # assumes at least 1 datamap
+        outputs = [r[key] for r in datamaps]
+        if is_ndarray(outputs[0]) and outputs[0].shape:
+            res[key] = np.concatenate(outputs)
+        else:
+            res[key] = scalar_merge(outputs)
+    return res
 
 
 # ############################# misc tensorflow #############################
