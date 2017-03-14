@@ -131,6 +131,10 @@ def variable_scope(name_or_scope=None,
     """
     if default_name is None and name_or_scope is None:
         name_or_scope = tf.get_variable_scope()
+    # HACK for variable names as scopes
+    if isinstance(name_or_scope, six.string_types) and name_or_scope.endswith(":0"):
+        name_or_scope = name_or_scope[:-len(":0")]
+
     with tf.variable_scope(name_or_scope=name_or_scope,
                            default_name=default_name,
                            reuse=reuse):
