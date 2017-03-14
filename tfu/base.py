@@ -411,7 +411,7 @@ class TensorFlowFunction(object):
                             options=self.options,
                             run_metadata=self.run_metadata)
 
-        output_res = res[:len(self._outputs)]
+        output_res = res[:len(self.outputs)]
         ops_res = res[-len(self.ops):]
 
         for op, op_res in zip(self.ops, ops_res):
