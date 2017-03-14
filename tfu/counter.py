@@ -46,13 +46,14 @@ def make_default_counter(expected_count=None):
     base.default_graph_state().global_step_counter = GlobalStepCounter(
         expected_count=expected_count,
     )
+    return base.default_graph_state().global_step_counter
 
 
 def get_default_counter():
     return base.default_graph_state().global_step_counter
 
 
-def set_sess(sess):
+def set_session(sess):
     return get_default_counter().set_session(sess)
 
 
@@ -89,3 +90,26 @@ def get_bounded_progress():
     """
     assert get_default_counter().expected_count is not None
     return get_default_counter()._bounded_progress
+
+# ############################ utility functions ############################
+
+
+def to_scaled_bounded_progress(end_progress):
+    """
+    given a target end progress ratio, converts to a scale when 0 maps to 0
+    progress and 1 maps to the end progress
+    """
+    return tf.clip_by_value(get_progress() / end_progress, 0, 1)
+
+
+def progress_cond(progress, if_above, if_below):
+    return tf.cond(get_progress() >= progress, if_above, if_below)
+
+
+def discrete_scale_schedule(x, scale, thresholds):
+    """
+    multiplies x by scale  every time a threshold is crossed
+    """
+    for threshold in thresholds:
+        x = progress_cond(threshold, lambda: scale * x, lambda: x)
+    return x
