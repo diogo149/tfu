@@ -92,6 +92,14 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                          name="valid_fn")
     valid_fn = tfu.wrap.split_input(valid_fn, split_size=BATCH_SIZE)
 
+    # load previous iteration
+    if 0:
+        prev_trial = du.trial.TrialState(trial_name=trial.trial_name,
+                                         iteration_num=9)
+        tfu.serialization.load_variables(
+            prev_trial.file_path("final_variables"))
+        tfu.counter.sync_count_value()
+
     summary_printer = tfu.SummaryPrinter()
     summary_printer.add_recipe("trial_info", trial)
     summary_printer.add_recipe("iter")
@@ -108,11 +116,13 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     train_summary.add_summary_printer(summary_printer)
     valid_summary.add_summary_printer(summary_printer)
 
-    for _ in range(NUM_EPOCHS):
+    while tfu.counter.get_count_value() < NUM_EPOCHS:
         with du.timer("epoch"):
             tfu.counter.step()
             train_res = train_fn(train)
-            print "train", train_res
+            print("train", train_res)
             valid_res = valid_fn(valid)
-            print "valid", valid_res
+            print("valid", valid_res)
             print(summary_printer.to_org_list())
+
+    tfu.serialization.dump_variables(trial.file_path("final_variables"))
