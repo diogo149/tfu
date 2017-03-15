@@ -16,6 +16,7 @@ from .base import *
 from .tf_utils import *
 from .rnn_step import *
 from .rnn_steps import *
+from .summary_printer import SummaryPrinter
 
 from . import hooks
 from . import inits
@@ -25,3 +26,4 @@ from . import counter
 from . import wrap
 from . import serialization
 from . import summary
+from . import summary_printer
