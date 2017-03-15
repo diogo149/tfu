@@ -125,4 +125,5 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             print("valid", valid_res)
             print(summary_printer.to_org_list())
 
-    tfu.serialization.dump_variables(trial.file_path("final_variables"))
+    if 0:
+        tfu.serialization.dump_variables(trial.file_path("final_variables"))
