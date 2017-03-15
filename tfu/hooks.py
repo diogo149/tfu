@@ -72,7 +72,7 @@ def reuse_variables(variable_scope=None,
 
         if full_name in base.default_graph_state().variables:
             var = base.default_graph_state().variables[full_name]
-            assert utils.get_shape_values(var) == shape
+            assert utils.get_shape_values(var) == list(shape)
             return var
         else:
             if create_if_nonexistent:
