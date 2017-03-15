@@ -18,6 +18,7 @@ class GraphState(object):
         if graph is None:
             graph = tf.Graph()
         self.graph = graph
+        self.variables = {}
         self.variable_metadata = {}
         self.current_metadata = {}
         self.hooks = []
@@ -131,6 +132,7 @@ def variable_scope(name_or_scope=None,
     """
     if default_name is None and name_or_scope is None:
         name_or_scope = tf.get_variable_scope()
+
     # HACK for variable names as scopes
     if isinstance(name_or_scope, six.string_types) and name_or_scope.endswith(":0"):
         name_or_scope = name_or_scope[:-len(":0")]
@@ -217,7 +219,9 @@ def get_variable(name,
                           initializer=new_initial_value,
                           # defaulting trainable to False is not specified
                           trainable=new_metadata.get("trainable", False))
-    default_graph_state().variable_metadata[var] = new_metadata
+    assert utils.full_variable_name(name) == var.name
+    default_graph_state().variables[var.name] = var
+    default_graph_state().variable_metadata[var.name] = new_metadata
     return var
 
 # ############################# variable search #############################
@@ -228,8 +232,9 @@ def find_variables(name=None, variable_scope=None, **metadata):
     metadata based variable search
     """
     result = []
-    for var, var_meta in default_graph_state().variable_metadata.items():
-        var_path = var.name.split("/")
+    graph_state = default_graph_state()
+    for var_name, var_meta in graph_state.variable_metadata.items():
+        var_path = var_name.split("/")
 
         # for name match, we require an exact match
         if name is not None:
@@ -259,7 +264,7 @@ def find_variables(name=None, variable_scope=None, **metadata):
             if var_meta.get(k) != v:
                 break
         else:
-            result.append(var)
+            result.append(graph_state.variables[var_name])
     return result
 
 # ################################# filters #################################

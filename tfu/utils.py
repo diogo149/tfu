@@ -91,6 +91,16 @@ def datamap_merge(datamaps, scalar_merge="mean"):
 
 # ############################# misc tensorflow #############################
 
+def full_variable_name(name, variable_scope=None):
+    if variable_scope is None:
+        variable_scope = tf.get_variable_scope()
+    vs_name = variable_scope.name
+    if vs_name.endswith("/"):
+        full_name = vs_name + name + ":0"
+    else:
+        full_name = vs_name + "/" + name + ":0"
+    return full_name
+
 
 def is_tensor(o):
     return isinstance(o, tf.Tensor)

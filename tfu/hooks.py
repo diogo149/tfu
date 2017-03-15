@@ -1,3 +1,4 @@
+import re
 import tensorflow as tf
 
 from . import utils
@@ -46,3 +47,40 @@ def auto_initialize_variables(session):
         return res
 
     return base.filter_dsl(hook, key="get_variable")
+
+
+def reuse_variables(variable_scope=None,
+                    replace=(),
+                    create_if_nonexistent=False):
+    """
+    NOTE: this should probably be the inner-most hook for get_variable
+    """
+
+    def reuse_variables_inner(hs):
+        name = hs.kwargs["name"]
+        shape = hs.kwargs["shape"]
+
+        full_name = utils.full_variable_name(name)
+        # perform replacement
+        for r in replace:
+            if isinstance(r, tuple):
+                # re.sub DSL
+                full_name = re.sub(r[0], r[1], full_name)
+            else:
+                # otherwise, it's an arbitrary function
+                full_name = r(full_name)
+
+        if full_name in base.default_graph_state().variables:
+            var = base.default_graph_state().variables[full_name]
+            assert utils.get_shape_values(var) == shape
+            return var
+        else:
+            if create_if_nonexistent:
+                return hs()
+            else:
+                raise ValueError("variable with name %s doesn't exist" %
+                                 full_name)
+
+    return base.filter_dsl(reuse_variables_inner,
+                           key="get_variable",
+                           variable_scope=variable_scope)
