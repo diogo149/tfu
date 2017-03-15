@@ -545,7 +545,6 @@ class SummaryAccumulator(TensorFlowFunctionOp):
         self.file_writers.append(file_writer)
 
     def add_summary_printer(self, summary_printer):
-        assert isinstance(summary_printer, du.sandbox.summary.Summary)
         self.summary_printers.append(summary_printer)
 
 
