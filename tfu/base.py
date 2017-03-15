@@ -162,6 +162,12 @@ def get_variable(name,
     - default to zero init
     - auto-converting dtype
     - only supporting initial value instead of initializer function
+
+    kept functionality:
+    - still using tf.get_variable under the hood
+    - error will occur if making a duplicate variable
+    - adding to GraphKeys.GLOBAL_VARIABLES
+    - adding to GraphKeys.TRAINABLE_VARIABLES if trainable=True in metadata
     """
     # make a copy of currrent metadata
     new_metadata = dict(default_graph_state().current_metadata)
@@ -205,9 +211,6 @@ def get_variable(name,
     if dtype is not None:
         new_initial_value = tf.cast(new_initial_value, dtype)
 
-    # TODO stop using get_variable
-    # only important functionality is adding to global and trainable variables
-    # collections
     var = tf.get_variable(name=name,
                           shape=None,
                           dtype=None,
