@@ -95,7 +95,9 @@ def full_variable_name(name, variable_scope=None):
     if variable_scope is None:
         variable_scope = tf.get_variable_scope()
     vs_name = variable_scope.name
-    if vs_name.endswith("/"):
+    if vs_name == "":
+        full_name = name + ":0"
+    elif vs_name.endswith("/"):
         full_name = vs_name + name + ":0"
     else:
         full_name = vs_name + "/" + name + ":0"
