@@ -33,8 +33,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     y = tf.placeholder(tf.int64, [None], name="y")
 
     tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.msr_normal))
-    # FIXME replace with scale_weight_inits
-    tfu.add_hook(tfu.inits.scale_inits(scale=np.sqrt(2)))
+    tfu.add_hook(tfu.inits.scale_weight_inits(scale=np.sqrt(2)))
     tfu.add_hook(tfu.hooks.default_kwargs_dsl(kwargs={"filter_size": (3, 3)},
                                               key="conv2d"))
 
