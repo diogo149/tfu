@@ -78,7 +78,7 @@ with tfu.variable_scope("mlp", reuse=True):
     last_hidden = feats[-2][1]
 
 train_cost = train_ce
-weights = tfu.variables(weight=True)
+weights = tfu.find_variables(weight=True)
 if l2_weight != 0:
     for w in weights:
         train_cost += l2_weight * tf.reduce_sum(tf.square(w))
@@ -131,7 +131,7 @@ if 1:
 
 
 def mlp_train_fn():
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("mlp_opt"):
         optimizer = tf.train.GradientDescentOptimizer(1e-1)
         grads = tf.gradients(train_cost, params)
@@ -152,7 +152,7 @@ def mlp_train_fn():
 
 
 def probe_train_fn():
-    params = tfu.variables(variable_scope="probe")
+    params = tfu.find_variables(variable_scope="probe")
     with tf.name_scope("probe_opt"):
         optimizer = tf.train.GradientDescentOptimizer(1e-1)
         grads = tf.gradients(probe_cost, params)
@@ -183,7 +183,7 @@ def probe_debug():
 
 
 def adv_train_fn():
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("adv_opt"):
         optimizer = tf.train.GradientDescentOptimizer(1e-1)
         grads = tf.gradients(-probe_reward, params)

@@ -98,8 +98,8 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     new_lr = tf.placeholder(tf.float32)
     update_lr_op = tf.assign(lr, new_lr)
 
-    generator_params = tfu.variables(variable_scope="generator")
-    critic_params = tfu.variables(variable_scope="critic")
+    generator_params = tfu.find_variables(variable_scope="generator")
+    critic_params = tfu.find_variables(variable_scope="critic")
 
     generator_train_op = tf.train.RMSPropOptimizer(learning_rate=lr).minimize(
         loss=-fake_score,

@@ -10,6 +10,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     import numpy as np
     import tensorflow as tf
     import tfu
+    import du.sandbox.summary
 
     train, valid, test = du.tasks.image_tasks.mnist(x_dtype="float32",
                                                     y_dtype="int64")
@@ -39,14 +40,36 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             tfu.softmax_cross_entropy_with_logits(h, y))
         accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y))
 
+        tfu.summary.scalar("cost", cross_entropy)
+        tfu.summary.scalar("accuracy", accuracy)
+
         return dict(
             cross_entropy=cross_entropy,
             accuracy=accuracy,
         )
 
-    with tfu.variable_scope("mlp"):
+    summary = du.sandbox.summary.Summary()
+    summary.add_recipe("trial_info", trial)
+    # FIXME
+    # summary.add("_iter", how="last")
+    # summary.add("_time", how="last")
+    # summary.add_recipe("s_per_iter")
+    # summary.add_recipe("x min+iter", "valid_cost", format="%.4g")
+    # summary.add_recipe("x max+iter", "valid_accuracy", format="%.4g")
+    # summary.add_recipe("add_finals",
+    #                    ["train_cost", "valid_cost", "valid_accuracy"],
+    #                    format="%.4g")
+
+    train_summary = tfu.SummaryAccumulator()
+    train_summary.add_file_writer(trial.file_path("train_summary"))
+
+    valid_summary = tfu.SummaryAccumulator()
+    valid_summary.add_file_writer(trial.file_path("valid_summary"))
+
+    with tfu.variable_scope("mlp"), train_summary:
         train_out = model(False)
-    with tfu.variable_scope("mlp", reuse=True):
+
+    with tfu.variable_scope("mlp", reuse=True), valid_summary:
         valid_out = model(True)
 
     updates = tfu.UpdatesAccumulator()
@@ -65,7 +88,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                          inputs={"x": x,
                                  "y": y},
                          outputs=train_out,
-                         ops=[updates],
+                         ops=[updates, train_summary],
                          name="train_fn")
     train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
     train_fn = tfu.wrap.shuffle_input(train_fn)
@@ -74,7 +97,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                          inputs={"x": x,
                                  "y": y},
                          outputs=valid_out,
-                         ops=[],
+                         ops=[valid_summary],
                          name="valid_fn")
     valid_fn = tfu.wrap.split_input(valid_fn, split_size=BATCH_SIZE)
     # FIXME summaries

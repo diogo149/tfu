@@ -52,7 +52,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y))
     accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y))
 
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("adam"):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         # Op to calculate every variable gradient
@@ -74,7 +74,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             probe_cost += cost
             probe_summaries.append(tf.summary.scalar("probe_%s" % name, cost))
 
-    params = tfu.variables(variable_scope="probe")
+    params = tfu.find_variables(variable_scope="probe")
     assert len(params) == 4
     with tf.name_scope("probe_adam"):
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)

@@ -9,7 +9,7 @@ def dump_variables(filename=None, metadata=None):
     if metadata is None:
         metadata = {}
     result = {}
-    for var in base.variables(**metadata):
+    for var in base.find_variables(**metadata):
         # HACK assumes default session
         result[var.name] = var.eval()
     if filename is not None:
@@ -26,7 +26,7 @@ def load_variables(filename_or_obj):
     else:
         obj = filename_or_obj
 
-    for var in base.variables():
+    for var in base.find_variables():
         if var.name in obj:
             # HACK assumes default session
             tf.assign(var, obj[var]).run()

@@ -89,7 +89,7 @@ with tf.device('/cpu:0'):
         feats, raw_cost, cost = mlp(True)
         last_hidden = feats[-2][1]
 
-    weights = tfu.variables(weight=True)
+    weights = tfu.find_variables(weight=True)
     if l2_weight != 0:
         for w in weights:
             train_cost += l2_weight * tf.reduce_sum(tf.square(w))

@@ -223,7 +223,7 @@ def variable_nan_guard(fn,
 
     def variable_nan_guard_inner(*args, **kwargs):
         res = fn(*args, **kwargs)
-        for var in base.variables():
+        for var in base.find_variables():
             # HACK assumes default session
             check_nan(var.name, var.eval())
         return res

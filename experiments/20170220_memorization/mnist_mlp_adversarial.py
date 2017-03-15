@@ -180,7 +180,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             probe_reward += probe_reward_fn(h)
             probe_summaries.append(tf.summary.scalar("probe_%s" % name, cost))
 
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
         # Op to calculate every variable gradient
@@ -200,7 +200,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
         mlp_probe_train_step = optimizer.apply_gradients(
             grads_and_vars=grads_and_vars)
 
-    params = tfu.variables(variable_scope="probe")
+    params = tfu.find_variables(variable_scope="probe")
     with tf.name_scope("probe_opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
         # Op to calculate every variable gradient

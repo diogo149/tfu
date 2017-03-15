@@ -220,7 +220,7 @@ def get_variable(name,
 # ############################# variable search #############################
 
 
-def variables(name=None, variable_scope=None, **metadata):
+def find_variables(name=None, variable_scope=None, **metadata):
     """
     metadata based variable search
     """

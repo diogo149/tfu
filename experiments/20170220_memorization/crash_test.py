@@ -64,7 +64,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     cross_entropy = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(h, y))
     accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y))
 
-    params = tfu.variables(variable_scope="net")
+    params = tfu.find_variables(variable_scope="net")
     with tf.name_scope("opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate)
         # Op to calculate every variable gradient

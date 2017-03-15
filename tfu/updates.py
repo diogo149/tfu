@@ -62,7 +62,7 @@ def apply_nesterov_momentum(updates, params=None, momentum=0.9):
 
 def _to_param_grad_pairs(loss_or_grads, params=None):
     if params is None:
-        params = base.variables(trainable=True)
+        params = base.find_variables(trainable=True)
     if not isinstance(loss_or_grads, (list, tuple)):
         all_grads = tf.gradients(loss_or_grads, params)
     else:

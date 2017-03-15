@@ -100,7 +100,7 @@ with tf.device('/cpu:0'):
         feats, raw_cost, cost = mlp(True)
         last_hidden = feats[-2][1]
 
-    weights = tfu.variables(weight=True)
+    weights = tfu.find_variables(weight=True)
     if l2_weight != 0:
         for w in weights:
             train_cost += l2_weight * tf.reduce_sum(tf.square(w))
@@ -152,7 +152,7 @@ with tf.device('/cpu:0'):
         probe_reward = tf.reduce_mean(tfu.softmax_cross_entropy_with_logits(probe_deterministic,
                                                                             probe_target))
 
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("mlp_opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=mlp_learning_rate)
         grads = tf.gradients(train_cost, params)
@@ -160,7 +160,7 @@ with tf.device('/cpu:0'):
         mlp_train_step = optimizer.apply_gradients(
             grads_and_vars=grads_and_vars)
 
-    params = tfu.variables(variable_scope="probe")
+    params = tfu.find_variables(variable_scope="probe")
     with tf.name_scope("probe_opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=probe_learning_rate)
         grads = tf.gradients(probe_cost, params)
@@ -168,7 +168,7 @@ with tf.device('/cpu:0'):
         probe_train_step = optimizer.apply_gradients(
             grads_and_vars=grads_and_vars)
 
-    params = tfu.variables(variable_scope="mlp")
+    params = tfu.find_variables(variable_scope="mlp")
     with tf.name_scope("adv_opt"):
         optimizer = tf.train.RMSPropOptimizer(learning_rate=adv_learning_rate)
         grads = tf.gradients(-probe_reward, params)
