@@ -378,7 +378,6 @@ def scalar_summary_to_dict(summ):
     assert isinstance(summ, tf.summary.Summary)
     for value in summ.value:
         assert isinstance(value, tf.summary.Summary.Value)
-        print repr(value.histo)
         if hasattr(value, "simple_value") and value.histo.ByteSize() == 0:
             res[value.tag] = value.simple_value
     return res
