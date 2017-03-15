@@ -6,11 +6,11 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
 
     NUM_EPOCHS = 25
     BATCH_SIZE = 500
+    NUM_UNITS = 512
 
     import numpy as np
     import tensorflow as tf
     import tfu
-    import du.sandbox.summary
 
     train, valid, test = du.tasks.image_tasks.mnist(x_dtype="float32",
                                                     y_dtype="int64")
@@ -22,17 +22,17 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                                            replace=[("valid", "train")]))
     tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.msr_normal))
     tfu.add_hook(tfu.inits.scale_weight_inits(np.sqrt(2)))
-    tfu.counter.make_default_counter(expected_count=NUM_EPOCHS - 1)
+    tfu.counter.make_default_counter(expected_count=NUM_EPOCHS)
 
     def model(deterministic):
         h = tfu.flatten(x, 2)
         with tfu.variable_scope("fc1"):
-            h = tfu.affine(h, 512)
+            h = tfu.affine(h, NUM_UNITS)
             h = tf.nn.relu(h)
             if not deterministic:
                 h = tf.nn.dropout(h, keep_prob=0.5)
         with tfu.variable_scope("fc2"):
-            h = tfu.affine(h, 512)
+            h = tfu.affine(h, NUM_UNITS)
             h = tf.nn.relu(h)
             if not deterministic:
                 h = tf.nn.dropout(h, keep_prob=0.5)
@@ -49,18 +49,6 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             cross_entropy=cross_entropy,
             accuracy=accuracy,
         )
-
-    summary = du.sandbox.summary.Summary()
-    summary.add_recipe("trial_info", trial)
-    # FIXME
-    # summary.add("_iter", how="last")
-    # summary.add("_time", how="last")
-    # summary.add_recipe("s_per_iter")
-    # summary.add_recipe("x min+iter", "valid_cost", format="%.4g")
-    # summary.add_recipe("x max+iter", "valid_accuracy", format="%.4g")
-    # summary.add_recipe("add_finals",
-    #                    ["train_cost", "valid_cost", "valid_accuracy"],
-    #                    format="%.4g")
 
     file_writer = tf.summary.FileWriter(trial.file_path("summary"))
 
@@ -103,13 +91,28 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                          ops=[valid_summary],
                          name="valid_fn")
     valid_fn = tfu.wrap.split_input(valid_fn, split_size=BATCH_SIZE)
-    # FIXME summaries
-    # FIXME summary printers
+
+    summary_printer = tfu.SummaryPrinter()
+    summary_printer.add_recipe("trial_info", trial)
+    summary_printer.add_recipe("iter")
+    summary_printer.add_recipe("time")
+    summary_printer.add_recipe("s_per_iter")
+    summary_printer.add_recipe("x min+iter", "valid/cost", format="%.4g")
+    summary_printer.add_recipe("x max+iter", "valid/accuracy", format="%.4g")
+    summary_printer.add_recipe("add_finals",
+                               ["train/cost",
+                                "train/accuracy",
+                                "valid/cost",
+                                "valid/accuracy"],
+                               format="%.4g")
+    train_summary.add_summary_printer(summary_printer)
+    valid_summary.add_summary_printer(summary_printer)
 
     for _ in range(NUM_EPOCHS):
         with du.timer("epoch"):
-            train_res = train_fn(train)
-            valid_res = valid_fn(valid)
-            print "train", train_res
-            print "valid", valid_res
             tfu.counter.step()
+            train_res = train_fn(train)
+            print "train", train_res
+            valid_res = valid_fn(valid)
+            print "valid", valid_res
+            print(summary_printer.to_org_list())
