@@ -18,6 +18,8 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     x = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
     y = tf.placeholder(tf.int64, shape=[None])
 
+    tfu.add_hook(tfu.hooks.reuse_variables(variable_scope="valid",
+                                           replace=[("valid", "train")]))
     tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.msr_normal))
     tfu.add_hook(tfu.inits.scale_weight_inits(np.sqrt(2)))
     tfu.counter.make_default_counter(expected_count=NUM_EPOCHS - 1)
@@ -60,21 +62,22 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     #                    ["train_cost", "valid_cost", "valid_accuracy"],
     #                    format="%.4g")
 
+    file_writer = tf.summary.FileWriter(trial.file_path("summary"))
+
     train_summary = tfu.SummaryAccumulator()
-    train_summary.add_file_writer(trial.file_path("train_summary"))
+    train_summary.add_file_writer(file_writer)
 
     valid_summary = tfu.SummaryAccumulator()
-    valid_summary.add_file_writer(trial.file_path("valid_summary"))
-
-    with tfu.variable_scope("mlp"), train_summary:
-        train_out = model(False)
-
-    with tfu.variable_scope("mlp", reuse=True), valid_summary:
-        valid_out = model(True)
+    valid_summary.add_file_writer(file_writer)
 
     updates = tfu.UpdatesAccumulator()
-    with updates:
+
+    with tfu.variable_scope("train"), train_summary, updates:
+        train_out = model(False)
         tfu.updates.adam(train_out["cross_entropy"])
+
+    with tfu.variable_scope("valid"), valid_summary:
+        valid_out = model(True)
 
     # enable XLA
     config = tf.ConfigProto()
