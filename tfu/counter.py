@@ -36,6 +36,13 @@ class GlobalStepCounter(object):
             sess = tf.get_default_session()
         _, self._count_value = sess.run([self._step_op, self._new_count])
 
+    def sync_count_value(self, sess=None):
+        if sess is None:
+            sess = self.sess
+        if sess is None:
+            sess = tf.get_default_session()
+        self._count_value = sess.run(self._count)
+
     def as_default(self):
         # TODO implement
         raise NotImplementedError()
@@ -94,6 +101,16 @@ def get_bounded_progress():
     """
     assert get_default_counter().expected_count is not None
     return get_default_counter()._bounded_progress
+
+
+def sync_count_value(sess=None):
+    """
+    loads count value from tensorflow session
+
+    use case: loading previous count value from serialized state
+    """
+    get_default_counter().sync_count_value()
+    pass
 
 # ############################ utility functions ############################
 
