@@ -520,14 +520,14 @@ class SummaryAccumulator(TensorFlowFunctionOp):
         return tf.summary.merge(self.summaries)
 
     def handle_result(self, op_res):
-        summ = tf.summary.Summary(op_res)
+        summ = tf.summary.Summary()
+        summ.ParseFromString(op_res)
         summ_dict = utils.scalar_summary_to_dict(summ)
         for file_writer in self.file_writers:
             global_step = default_graph_state().global_step_counter._count_value
             file_writer.add_summary(summary=summ, global_step=global_step)
         for summary_printer in self.summary_printers:
             summary_printer.update(summ_dict)
-            print(summary_printer.to_org_list())
 
     def add_file_writer(self, file_writer):
         if isinstance(file_writer, six.string_types):
