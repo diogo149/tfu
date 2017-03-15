@@ -29,6 +29,6 @@ def load_variables(filename_or_obj):
     for var in base.find_variables():
         if var.name in obj:
             # HACK assumes default session
-            tf.assign(var, obj[var]).run()
+            tf.assign(var, obj[var.name]).eval()
 
     return obj
