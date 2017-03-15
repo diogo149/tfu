@@ -58,6 +58,10 @@ def set_session(sess):
 
 
 def step(sess=None):
+    """
+    note: should be done at the beginning of each iteration
+    (so the count starts at 1)
+    """
     return get_default_counter().step(sess=sess)
 
 
@@ -77,8 +81,8 @@ def get_count_value():
 
 def get_progress(dtype=tf.float32):
     """
-    returns progress as a tensor (mapping the first count to 0 and
-    expected_count to 1)
+    returns progress as a tensor (mapping the first count to 1/expected_count
+    and expected_count to 1)
     """
     assert get_default_counter().expected_count is not None
     return get_default_counter()._progress
@@ -103,7 +107,7 @@ def to_scaled_bounded_progress(end_progress):
 
 
 def progress_cond(progress, if_above, if_below):
-    return tf.cond(get_progress() >= progress, if_above, if_below)
+    return tf.cond(get_progress() > progress, if_above, if_below)
 
 
 def discrete_scale_schedule(x, scale, thresholds):
