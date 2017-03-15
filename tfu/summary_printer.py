@@ -292,9 +292,10 @@ def time(summary):
 @SummaryPrinter.save_recipe()
 def iter(summary):
     from . import counter
+    initial_count = counter.get_count_value()
     summary.add(field_name="iter",
                 in_keys=(),
-                how=lambda: counter.get_count_value(),
+                how=lambda: counter.get_count_value() - initial_count,
                 prev_keys=(),
                 value=0.0,
                 format="%d")
