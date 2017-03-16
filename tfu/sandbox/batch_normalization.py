@@ -58,11 +58,11 @@ def ema_batch_normalization(tensor,
                 axes=list(range(tfu.ndim(tensor) - 1)),
                 keep_dims=True)
             inv_std = tf.reciprocal(tf.sqrt(variance + epsilon))
-            mu = tfu.get_variable("mu",
+            mu = tfu.get_variable(name="mu",
                                   shape=tfu.get_shape_values(mean),
                                   dtype=tensor.dtype,
                                   trainable=False)
-            inv_sigma = tfu.get_variable("inv_sigma",
+            inv_sigma = tfu.get_variable(name="inv_sigma",
                                          shape=tfu.get_shape_values(inv_std),
                                          dtype=tensor.dtype,
                                          initial_value=1.0,
