@@ -28,6 +28,7 @@ def load_variables(filename_or_obj):
     else:
         obj = filename_or_obj
 
+    # TODO batch loading
     for var in base.find_variables():
         if var.name in obj:
             # HACK assumes default session
