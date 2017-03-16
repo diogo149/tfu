@@ -124,6 +124,7 @@ def to_scaled_bounded_progress(end_progress):
 
 
 def progress_cond(progress, if_above, if_below):
+    progress = tf.convert_to_tensor(progress)
     return tf.cond(get_progress() > progress, if_above, if_below)
 
 
@@ -131,6 +132,8 @@ def discrete_scale_schedule(x, scale, thresholds):
     """
     multiplies x by scale  every time a threshold is crossed
     """
+    x = tf.convert_to_tensor(x)
+    scale = tf.convert_to_tensor(scale)
     for threshold in thresholds:
         x = progress_cond(threshold, lambda: scale * x, lambda: x)
     return x
