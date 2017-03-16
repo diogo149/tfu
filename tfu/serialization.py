@@ -9,9 +9,11 @@ def dump_variables(filename=None, metadata=None):
     if metadata is None:
         metadata = {}
     result = {}
-    for var in base.find_variables(**metadata):
-        # HACK assumes default session
-        result[var.name] = var.eval()
+    variables = base.find_variables(**metadata)
+    # HACK assumes default session
+    values = tf.get_default_session().run(variables)
+    for var, value in zip(variables, values):
+        result[var.name] = value
     if filename is not None:
         du.io_utils.pickle_dump(result, filename)
     return result
