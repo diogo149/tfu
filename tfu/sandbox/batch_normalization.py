@@ -7,13 +7,13 @@ def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
             num_units = tfu.get_shape_values(tensor)[-1]
-            beta = tfu.get_variable("beta",
+            beta = tfu.get_variable(name="beta",
                                     shape=[num_units],
                                     dtype=tensor.dtype,
                                     trainable=True,
                                     bias=True,
                                     bn_beta=True)
-            gamma = tfu.get_variable("gamma",
+            gamma = tfu.get_variable(name="gamma",
                                      shape=[num_units],
                                      dtype=tensor.dtype,
                                      initial_value=1.0,
@@ -40,13 +40,13 @@ def ema_batch_normalization(tensor,
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
             num_units = tfu.get_shape_values(tensor)[-1]
-            beta = tfu.get_variable("beta",
+            beta = tfu.get_variable(name="beta",
                                     shape=[num_units],
                                     dtype=tensor.dtype,
                                     trainable=True,
                                     bias=True,
                                     bn_beta=True)
-            gamma = tfu.get_variable("gamma",
+            gamma = tfu.get_variable(name="gamma",
                                      shape=[num_units],
                                      dtype=tensor.dtype,
                                      initial_value=1.0,
