@@ -167,16 +167,14 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                          inputs={"x": x,
                                  "y": y},
                          outputs=train_out,
-                         ops=[updates, train_summary],
-                         name="train_fn")
+                         ops=[updates, train_summary])
     train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
 
     valid_fn = tfu.tf_fn(sess=sess,
                          inputs={"x": x,
                                  "y": y},
                          outputs=valid_out,
-                         ops=[valid_summary],
-                         name="valid_fn")
+                         ops=[valid_summary])
     valid_fn = tfu.wrap.split_input(valid_fn, split_size=250)
 
     summary_printer = tfu.SummaryPrinter()
