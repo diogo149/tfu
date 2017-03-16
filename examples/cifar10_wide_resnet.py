@@ -17,14 +17,13 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     import tfu
     import tfu.sandbox.batch_normalization as bn
 
-    # FIXME fix these functions
     datamaps = du.tasks.image_tasks.cifar10(x_dtype="float32",
                                             y_dtype="int64",
                                             include_valid_split=False)
     datamaps = du.tasks.image_tasks.subtract_per_pixel_mean(datamaps)
     train, valid = datamaps
 
-    x = tf.placeholder(tf.float32, [None, 3, 32, 32], name="x")
+    x = tf.placeholder(tf.float32, [None, 32, 32, 3], name="x")
     y = tf.placeholder(tf.int64, [None], name="y")
 
     tfu.add_hook(tfu.hooks.reuse_variables(variable_scope="valid",
@@ -83,8 +82,6 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                                       name="projection")
 
         h = x
-        # FIXME fix dims for cifar-10?
-        h = tfu.dimshuffle(x, [0, 2, 3, 1])
         with tfu.variable_scope("initial"):
             h = tfu.conv2d(h, num_filters=16)
             h = norm(h)
