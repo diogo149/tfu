@@ -47,7 +47,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             h = norm(h)
             h = tf.nn.relu(h)
         with tfu.variable_scope("conv3"):
-            h = tfu.conv2d(h, num_filters=96, stride=(2, 2))
+            h = tfu.conv2d(h, num_filters=96, strides=(2, 2))
             h = norm(h)
             h = tf.nn.relu(h)
         with tfu.variable_scope("conv4"):
@@ -59,7 +59,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             h = norm(h)
             h = tf.nn.relu(h)
         with tfu.variable_scope("conv6"):
-            h = tfu.conv2d(h, num_filters=192, stride=(2, 2))
+            h = tfu.conv2d(h, num_filters=192, strides=(2, 2))
             h = norm(h)
             h = tf.nn.relu(h)
         with tfu.variable_scope("conv7"):
