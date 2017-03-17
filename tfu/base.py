@@ -15,8 +15,11 @@ from . import utils
 class GraphState(object):
 
     def __init__(self, graph=None):
+        self.reset(graph=graph)
+
+    def reset(self, graph=None):
         if graph is None:
-            graph = tf.Graph()
+            graph = tf.get_default_graph()
         self.graph = graph
         self.variables = {}
         self.variable_metadata = {}
@@ -33,6 +36,14 @@ DEFAULT_GRAPH_STATE = [GraphState(graph=tf.get_default_graph())]
 
 def default_graph_state():
     return DEFAULT_GRAPH_STATE[0]
+
+
+def current_metadata():
+    return default_graph_state().current_metadata
+
+
+def reset_graph_state(graph=None):
+    default_graph_state().reset(graph=None)
 
 # ################################ base hooks ############################
 
