@@ -10,8 +10,8 @@ import tfu
 @tfu.hooked
 def layer_normalization(x,
                         epsilon=1e-5,
-                        bias_axis=1,
-                        scale_axis=1,
+                        bias_axis=-1,
+                        scale_axis=-1,
                         name=None):
     # default epsilon taken from
     # https://github.com/ryankiros/layer-norm/blob/master/layers.py
