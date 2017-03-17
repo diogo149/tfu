@@ -5,101 +5,101 @@ from . import base
 
 
 @base.hooked
-def linear(tensor, num_units, name=None):
+def linear(x, num_units, name=None):
     with base.variable_scope(name):
         with base.variable_scope("linear"):
-            num_inputs = utils.get_shape_values(tensor)[-1]
+            num_inputs = utils.get_shape_values(x)[-1]
             W = base.get_variable(name="W",
                                   shape=(num_inputs, num_units),
-                                  dtype=tensor.dtype,
+                                  dtype=x.dtype,
                                   trainable=True,
                                   weight=True,
                                   in_axes=[0],
                                   out_axes=[1])
-            return utils.dot(tensor, W)
+            return utils.dot(x, W)
 
 
 @base.hooked
-def add_bias(tensor, axis=-1, name=None):
+def add_bias(x, axis=-1, name=None):
     with base.variable_scope(name):
         with base.variable_scope("add_bias"):
             # TODO allow for multiple axes
-            num_units = utils.get_shape_values(tensor)[axis]
+            num_units = utils.get_shape_values(x)[axis]
             b = base.get_variable(name="b",
                                   shape=(num_units,),
-                                  dtype=tensor.dtype,
+                                  dtype=x.dtype,
                                   trainable=True,
                                   bias=True)
-            pattern = ["x"] * utils.ndim(tensor)
+            pattern = ["x"] * utils.ndim(x)
             pattern[axis] = 0
-            return tensor + utils.dimshuffle(b, pattern)
+            return x + utils.dimshuffle(b, pattern)
 
 
 @base.hooked
-def learned_scaling(tensor, axis=-1, exponential_scale=False, name=None):
+def learned_scaling(x, axis=-1, exponential_scale=False, name=None):
     with base.variable_scope(name):
         with base.variable_scope("learned_scaling"):
             # TODO allow for multiple axes
-            num_units = utils.get_shape_values(tensor)[axis]
+            num_units = utils.get_shape_values(x)[axis]
             if exponential_scale:
                 log_scale = base.get_variable(name="log_scale",
                                               shape=(num_units,),
-                                              dtype=tensor.dtype,
+                                              dtype=x.dtype,
                                               trainable=True)
                 scale = tf.exp(log_scale)
             else:
                 scale = base.get_variable(name="scale",
                                           shape=(num_units,),
-                                          dtype=tensor.dtype,
+                                          dtype=x.dtype,
                                           initial_value=1.0,
                                           trainable=True)
-            pattern = ["x"] * utils.ndim(tensor)
+            pattern = ["x"] * utils.ndim(x)
             pattern[axis] = 0
-            return tensor * utils.dimshuffle(scale, pattern)
+            return x * utils.dimshuffle(scale, pattern)
 
 
 @base.hooked
-def affine(tensor, num_units, name=None):
+def affine(x, num_units, name=None):
     with base.variable_scope(name):
         with base.variable_scope("affine"):
-            return add_bias(linear(tensor, num_units))
+            return add_bias(linear(x, num_units))
 
 
-def split_axis(tensor, axis, sizes):
+def split_axis(x, axis, sizes):
     """
     splits a tensor along a given axis according to the given sizes
     """
     results = []
-    begin = [0] * utils.ndim(tensor)
-    size = [-1] * utils.ndim(tensor)
+    begin = [0] * utils.ndim(x)
+    size = [-1] * utils.ndim(x)
     for s in sizes:
         size[axis] = s
-        res = tf.slice(tensor, begin, size)
+        res = tf.slice(x, begin, size)
         results.append(res)
         begin[axis] += s
     return results
 
 
 @base.hooked
-def multi_linear(names, tensor, num_units, split_output=True):
+def multi_linear(names, x, num_units, split_output=True):
     with base.variable_scope("multi_linear"):
         if isinstance(num_units, int):
             num_units = [num_units] * len(names)
         assert len(num_units) == len(names)
-        num_inputs = utils.get_shape_values(tensor)[-1]
+        num_inputs = utils.get_shape_values(x)[-1]
         Ws = []
         for name, n in zip(names, num_units):
             with base.variable_scope(name):
                 W = base.get_variable(name="W",
                                       shape=(num_inputs, n),
-                                      dtype=tensor.dtype,
+                                      dtype=x.dtype,
                                       trainable=True,
                                       weight=True,
                                       in_axes=[0],
                                       out_axes=[1])
                 Ws.append(W)
         W_concat = tf.concat(values=Ws, axis=1)
-        combined = utils.dot(tensor, W_concat)
+        combined = utils.dot(x, W_concat)
         if split_output:
             return split_axis(combined, axis=-1, sizes=num_units)
         else:
@@ -107,8 +107,8 @@ def multi_linear(names, tensor, num_units, split_output=True):
 
 
 @base.hooked
-def multi_affine(names, tensor, num_units):
-    results = multi_linear(names, tensor, num_units)
+def multi_affine(names, x, num_units):
+    results = multi_linear(names, x, num_units)
     new_results = []
     for name, result in zip(names, results):
         with base.variable_scope(name):
@@ -117,27 +117,27 @@ def multi_affine(names, tensor, num_units):
 
 
 @base.hooked
-def conv2d(tensor,
+def conv2d(x,
            num_filters,
            filter_size,
            strides=(1, 1),
            padding="SAME",
            name=None):
     assert isinstance(filter_size, tuple)
-    assert utils.ndim(tensor) == 4
+    assert utils.ndim(x) == 4
     with base.variable_scope(name):
         with base.variable_scope("conv2d"):
             strides = (1,) + strides + (1,)
-            num_channels = utils.get_shape_values(tensor)[3]
+            num_channels = utils.get_shape_values(x)[3]
             filter_shape = filter_size + (num_channels, num_filters)
             W = base.get_variable(name="W",
                                   shape=filter_shape,
-                                  dtype=tensor.dtype,
+                                  dtype=x.dtype,
                                   trainable=True,
                                   weight=True,
                                   in_axes=[2],
                                   out_axes=[3])
-            return tf.nn.conv2d(input=tensor,
+            return tf.nn.conv2d(input=x,
                                 filter=W,
                                 strides=strides,
                                 padding=padding,
@@ -145,32 +145,32 @@ def conv2d(tensor,
 
 
 @base.hooked
-def conv2d_transpose(tensor,
+def conv2d_transpose(x,
                      num_filters,
                      filter_size,
                      strides=(1, 1),
                      padding="SAME",
                      name=None):
     assert isinstance(filter_size, tuple)
-    assert utils.ndim(tensor) == 4
+    assert utils.ndim(x) == 4
     with base.variable_scope(name):
         with base.variable_scope("conv2d"):
             strides = (1,) + strides + (1,)
-            num_channels = utils.get_shape_values(tensor)[3]
+            num_channels = utils.get_shape_values(x)[3]
             filter_shape = filter_size + (num_filters, num_channels)
             W = base.get_variable(name="W",
                                   shape=filter_shape,
-                                  dtype=tensor.dtype,
+                                  dtype=x.dtype,
                                   trainable=True,
                                   weight=True,
                                   in_axes=[2],
                                   out_axes=[3])
-            output_shape = utils.get_shape_symbolic(tensor)
+            output_shape = utils.get_shape_symbolic(x)
             for idx, stride in enumerate(strides):
                 if stride != 1:
                     output_shape[idx] *= stride
             output_shape[-1] = num_filters
-            return tf.nn.conv2d_transpose(value=tensor,
+            return tf.nn.conv2d_transpose(value=x,
                                           filter=W,
                                           output_shape=output_shape,
                                           strides=strides,
@@ -179,7 +179,7 @@ def conv2d_transpose(tensor,
 
 
 @base.hooked
-def max_pool2d(tensor,
+def max_pool2d(x,
                ksize,
                strides=None,
                padding="SAME",
@@ -189,7 +189,7 @@ def max_pool2d(tensor,
     assert len(strides) == len(ksize) == 2
     ksize = (1,) + ksize + (1,)
     strides = (1,) + strides + (1,)
-    return tf.nn.max_pool(value=tensor,
+    return tf.nn.max_pool(value=x,
                           ksize=ksize,
                           strides=strides,
                           padding=padding,
@@ -197,7 +197,7 @@ def max_pool2d(tensor,
 
 
 @base.hooked
-def avg_pool2d(tensor,
+def avg_pool2d(x,
                ksize,
                strides=None,
                padding="SAME",
@@ -207,7 +207,7 @@ def avg_pool2d(tensor,
     assert len(strides) == len(ksize) == 2
     ksize = (1,) + ksize + (1,)
     strides = (1,) + strides + (1,)
-    return tf.nn.avg_pool(value=tensor,
+    return tf.nn.avg_pool(value=x,
                           ksize=ksize,
                           strides=strides,
                           padding=padding,
@@ -215,9 +215,9 @@ def avg_pool2d(tensor,
 
 
 @base.hooked
-def global_avg_pool2d(tensor, name=None):
-    ksize = [1] + utils.get_shape_symbolic(tensor)[1:3] + [1]
-    res = tf.nn.avg_pool(value=tensor,
+def global_avg_pool2d(x, name=None):
+    ksize = [1] + utils.get_shape_symbolic(x)[1:3] + [1]
+    res = tf.nn.avg_pool(value=x,
                          ksize=ksize,
                          strides=ksize,
                          padding="VALID",
@@ -227,19 +227,18 @@ def global_avg_pool2d(tensor, name=None):
 
 @base.hooked
 def rnn_reduce(rnn_fn,
-               tensors,
+               xs,
                initial_state,
                name=None):
-    # use set to make sure all tensors have same number of steps
-    num_steps, = set(map(lambda x: utils.get_shape_values(x)[0], tensors))
+    # use set to make sure all xs have same number of steps
+    num_steps, = set(map(lambda x: utils.get_shape_values(x)[0], xs))
     state = initial_state
     outputs = []
     with base.variable_scope(name):
         for time_step in range(num_steps):
             if time_step > 0:
                 tf.get_variable_scope().reuse_variables()
-            state = rnn_fn([utils.tensor_index(tensor, time_step)
-                            for tensor in tensors],
+            state = rnn_fn([utils.tensor_index(x, time_step) for x in xs],
                            state)
             outputs.append(state)
     return outputs

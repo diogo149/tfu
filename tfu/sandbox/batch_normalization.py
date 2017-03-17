@@ -4,27 +4,27 @@ import tfu
 
 
 @tfu.hooked
-def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
+def simple_batch_normalization(x, epsilon=1e-4, name=None):
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
-            num_units = tfu.get_shape_values(tensor)[-1]
+            num_units = tfu.get_shape_values(x)[-1]
             beta = tfu.get_variable(name="beta",
                                     shape=[num_units],
-                                    dtype=tensor.dtype,
+                                    dtype=x.dtype,
                                     trainable=True,
                                     bias=True,
                                     bn_beta=True)
             gamma = tfu.get_variable(name="gamma",
                                      shape=[num_units],
-                                     dtype=tensor.dtype,
+                                     dtype=x.dtype,
                                      initial_value=1.0,
                                      trainable=True,
                                      bn_gamma=True)
             mean, variance = tf.nn.moments(
-                x=tensor,
-                axes=list(range(tfu.ndim(tensor) - 1)),
+                x=x,
+                axes=list(range(tfu.ndim(x) - 1)),
                 keep_dims=True)
-            return tf.nn.batch_normalization(x=tensor,
+            return tf.nn.batch_normalization(x=x,
                                              mean=mean,
                                              variance=variance,
                                              offset=beta,
@@ -33,7 +33,7 @@ def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
 
 
 @tfu.hooked
-def ema_batch_normalization(tensor,
+def ema_batch_normalization(x,
                             use_batch_stats=True,
                             alpha=0.1,
                             epsilon=1e-4,
@@ -43,32 +43,32 @@ def ema_batch_normalization(tensor,
 
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
-            num_units = tfu.get_shape_values(tensor)[-1]
+            num_units = tfu.get_shape_values(x)[-1]
             beta = tfu.get_variable(name="beta",
                                     shape=[num_units],
-                                    dtype=tensor.dtype,
+                                    dtype=x.dtype,
                                     trainable=True,
                                     bias=True,
                                     bn_beta=True)
             gamma = tfu.get_variable(name="gamma",
                                      shape=[num_units],
-                                     dtype=tensor.dtype,
+                                     dtype=x.dtype,
                                      initial_value=1.0,
                                      trainable=True,
                                      bn_gamma=True)
 
             mean, variance = tf.nn.moments(
-                x=tensor,
-                axes=list(range(tfu.ndim(tensor) - 1)),
+                x=x,
+                axes=list(range(tfu.ndim(x) - 1)),
                 keep_dims=True)
             inv_std = tf.reciprocal(tf.sqrt(variance + epsilon))
             mu = tfu.get_variable(name="mu",
                                   shape=tfu.get_shape_values(mean),
-                                  dtype=tensor.dtype,
+                                  dtype=x.dtype,
                                   trainable=False)
             inv_sigma = tfu.get_variable(name="inv_sigma",
                                          shape=tfu.get_shape_values(inv_std),
-                                         dtype=tensor.dtype,
+                                         dtype=x.dtype,
                                          initial_value=1.0,
                                          trainable=False)
 
@@ -82,6 +82,6 @@ def ema_batch_normalization(tensor,
                                      # TODO should this be required
                                      required=True)
 
-                return (tensor - mean) * (inv_std * gamma) + beta
+                return (x - mean) * (inv_std * gamma) + beta
             else:
-                return (tensor - mu) * (inv_sigma * gamma) + beta
+                return (x - mu) * (inv_sigma * gamma) + beta

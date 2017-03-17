@@ -1,20 +1,20 @@
 import tensorflow as tf
 
 
-def ignore_additional_arg(tensor, arg):
+def ignore_additional_arg(x, arg):
     """
     used to combine additional unused information into the tf graph
     """
     arg = tf.convert_to_tensor(arg)
-    if arg.dtype == tensor.dtype:
+    if arg.dtype == x.dtype:
         # tf.cast is a no-op if the tensor has the correct type,
         # so add an additional op here so that get_ignored_arg
         # can unwrap a consistent number of ops
         casted = tf.identity(arg)
     else:
-        casted = tf.cast(arg, tensor.dtype)
+        casted = tf.cast(arg, x.dtype)
     # TODO use shape instead of reducing
-    return tensor + 0 * tf.reduce_sum(casted)
+    return x + 0 * tf.reduce_sum(casted)
 
 
 def get_ignored_arg(op):
@@ -30,8 +30,8 @@ def get_ignored_arg(op):
     return orig, arg
 
 
-def ignore_additional_args(tensor, args):
-    res = tensor
+def ignore_additional_args(x, args):
+    res = x
     # TODO this could be made more efficient by reordering based on shape
     # (if the tf optimizer doesn't handle this case)
     for arg in args:
@@ -56,10 +56,10 @@ def _gradient_reversal_grad(unused_op, grad):
     return [tf.negative(grad)]
 
 
-def gradient_reversal(tensor, name=None):
+def gradient_reversal(x, name=None):
     g = tf.get_default_graph()
     with g.gradient_override_map({"Identity": "GradientReversal"}):
-        return tf.identity(tensor, name=name)
+        return tf.identity(x, name=name)
 
 
 @tf.RegisterGradient("ElementwiseGradientClip")
@@ -73,12 +73,12 @@ def _elementwise_gradient_clip_grad(op, grad):
                              tf.cast(clip_value_max, grad.dtype))]
 
 
-def elementwise_gradient_clip(tensor,
+def elementwise_gradient_clip(x,
                               clip_value_min,
                               clip_value_max,
                               name=None):
-    res = ignore_additional_args(tensor, [clip_value_min,
-                                          clip_value_max])
+    res = ignore_additional_args(x, [clip_value_min,
+                                     clip_value_max])
     g = tf.get_default_graph()
     with g.gradient_override_map({"Identity": "ElementwiseGradientClip"}):
         return tf.identity(res, name=name)

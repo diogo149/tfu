@@ -8,7 +8,7 @@ import tfu
 
 
 @tfu.hooked
-def layer_normalization(tensor,
+def layer_normalization(x,
                         epsilon=1e-5,
                         bias_axis=1,
                         scale_axis=1,
@@ -18,11 +18,11 @@ def layer_normalization(tensor,
     with tfu.variable_scope(name):
         with tfu.variable_scope("layer_normalization"):
             mean, variance = tf.nn.moments(
-                x=tensor,
-                axes=[dim for dim in range(tfu.ndim(tensor))
+                x=x,
+                axes=[dim for dim in range(tfu.ndim(x))
                       if dim != 0],
                 keep_dims=True)
-            z = (tensor - mean) / tf.sqrt(variance + epsilon)
+            z = (x - mean) / tf.sqrt(variance + epsilon)
             if scale_axis is not None:
                 z = tfu.learned_scaling(z, axis=scale_axis)
             if bias_axis is not None:

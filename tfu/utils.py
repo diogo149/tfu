@@ -118,7 +118,7 @@ def is_symbolic(o):
             isinstance(o, tf.IndexedSlices))
 
 
-def smart_reshape(tensor, shape, name=None):
+def smart_reshape(x, shape, name=None):
     """
     similar to tf.reshape, but is better about handling output shape
 
@@ -144,29 +144,29 @@ def smart_reshape(tensor, shape, name=None):
         # shape
         # TODO
         new_shape = shape
-    return tf.reshape(tensor, new_shape, name)
+    return tf.reshape(x, new_shape, name)
 
 
-def ndim(tensor):
+def ndim(x):
     """
     returns number of dimensions for tensor
     """
-    return len(tensor.get_shape())
+    return len(x.get_shape())
 
 
-def get_shape_values(tensor):
+def get_shape_values(x):
     """
     returns shape of a tensor as a list of ints or None
     """
-    return tensor.get_shape().as_list()
+    return x.get_shape().as_list()
 
 
-def get_shape_symbolic(tensor):
+def get_shape_symbolic(x):
     """
     returns shape of a tensor as a list of ints or symbolic scalars
     """
-    res = get_shape_values(tensor)
-    symbolic_shape = tf.shape(tensor)
+    res = get_shape_values(x)
+    symbolic_shape = tf.shape(x)
     for idx, value in enumerate(res):
         if value is None:
             res[idx] = symbolic_shape[idx]
@@ -213,33 +213,33 @@ def get_by_name(name, collection=None):
         raise ValueError("wrong name type: %s" % name)
 
 
-def tensor_to_variable(tensor):
+def tensor_to_variable(x):
     """
     converts a read tensor to its corresponding variable
     """
-    assert tensor.name.endswith("/read:0")
-    var, = get_by_name(tensor.name[:-len("/read:0")])
+    assert x.name.endswith("/read:0")
+    var, = get_by_name(x.name[:-len("/read:0")])
     assert is_variable(var)
     return var
 
 
-def dimshuffle(tensor, pattern):
+def dimshuffle(x, pattern):
     """
     similar to theano's dimshuffle
     """
-    result = tensor
+    result = x
     # normalize pattern type
     assert isinstance(pattern, (list, tuple))
     pattern = tuple(pattern)
 
     # optimization: if pattern is all "x"'s followed by all the axes
     # in order, simply return the original tensor
-    if (set(pattern[:-ndim(tensor)]) == {"x"} and
-            pattern[-ndim(tensor):] == tuple(range(ndim(tensor)))):
-        return tensor
+    if (set(pattern[:-ndim(x)]) == {"x"} and
+            pattern[-ndim(x):] == tuple(range(ndim(x)))):
+        return x
 
     squeeze_dims = []
-    for dim in range(ndim(tensor)):
+    for dim in range(ndim(x)):
         if dim not in pattern:
             squeeze_dims.append(dim)
     if squeeze_dims:
@@ -270,21 +270,21 @@ def dimshuffle(tensor, pattern):
     return result
 
 
-def tensor_index(tensor, *idxs):
+def tensor_index(x, *idxs):
     # allow mutation
     idxs = list(idxs)
     # pad to the required number of dimensions
-    idxs += [slice(None)] * (ndim(tensor) - len(idxs))
+    idxs += [slice(None)] * (ndim(x) - len(idxs))
     # TODO put more stuff here
     # see https://github.com/tensorflow/tensorflow/issues/206
-    return tensor[tuple(idxs)]
+    return x[tuple(idxs)]
 
 
-def flatten(tensor, outdim=1):
+def flatten(x, outdim=1):
     assert outdim >= 1
-    shape = get_shape_symbolic(tensor)
+    shape = get_shape_symbolic(x)
     remaining_shape = smart_product(shape[outdim - 1:])
-    return smart_reshape(tensor, shape[:outdim - 1] + [remaining_shape])
+    return smart_reshape(x, shape[:outdim - 1] + [remaining_shape])
 
 
 def initialize_uninitialized_variables(session):
@@ -302,13 +302,13 @@ def sequential_global_variables_initializer(session):
         session.run(var.initializer)
 
 
-def list_reduce_mean(tensors):
-    assert len(tensors) > 0
-    if len(tensors) == 1:
-        return tensors[0]
+def list_reduce_mean(xs):
+    assert len(xs) > 0
+    if len(xs) == 1:
+        return xs[0]
     else:
         # TODO benchmark different indicies to do this over
-        packed = tf.pack(tensors, axis=0)
+        packed = tf.pack(xs, axis=0)
         return tf.reduce_mean(packed, axis=[0])
 
 
