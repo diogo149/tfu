@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import tensorflow as tf
 import tfu
 
@@ -72,12 +73,15 @@ def ema_batch_normalization(tensor,
                                          trainable=False)
 
             if use_batch_stats:
-                update = tf.group(
-                    tf.assign(mu, (1 - alpha) * mu + alpha * mean),
-                    tf.assign(inv_sigma, (1 - alpha) *
-                              inv_sigma + alpha * inv_std),
-                )
-                with tf.control_dependencies([update]):
-                    return (tensor - mean) * (inv_std * gamma) + beta
+                updates = OrderedDict()
+                updates[mu] = (1 - alpha) * mu + alpha * mean
+                updates[inv_sigma] = (1 - alpha) * inv_sigma + alpha * inv_std
+                tfu.register_updates(updates,
+                                     train=True,
+                                     bn=True,
+                                     # TODO should this be required
+                                     required=True)
+
+                return (tensor - mean) * (inv_std * gamma) + beta
             else:
                 return (tensor - mu) * (inv_sigma * gamma) + beta
