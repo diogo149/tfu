@@ -58,6 +58,9 @@ def get_exponential_moving_average(name=None):
         return base.get_variable(name="ema")
 
 
+get_ema = get_exponential_moving_average
+
+
 @base.hooked
 def linear(x, num_units, name=None):
     with base.variable_scope(name):
