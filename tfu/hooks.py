@@ -89,7 +89,7 @@ def reuse_variables(variable_scope=None,
                 assert utils.get_shape_values(var) == list(shape)
             if hs.kwargs.get("dtype"):
                 dtype = hs.kwargs["dtype"]
-                assert var.dtype == dtype
+                assert tf.python.DType.is_compatible_with(dtype, var.dtype)
             return var
         else:
             if create_if_nonexistent:
