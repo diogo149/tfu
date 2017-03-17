@@ -4,6 +4,60 @@ from . import utils
 from . import base
 
 
+def exponential_moving_average(x,
+                               alpha,
+                               initial_value=0,
+                               name=None,
+                               **update_metadata):
+    """
+    ema = alpha * x + (1 - alpha) * ema
+    """
+    with base.variable_scope(name):
+        old = base.get_variable(name="ema",
+                                shape=base.get_shape_values(x),
+                                dtype=x.dtype,
+                                initial_value=initial_value)
+        new = alpha * x + (1 - alpha) * old
+        base.register_updates([(old, new)], **update_metadata)
+        return old, new
+
+
+ema = exponential_moving_average
+
+
+def unbiased_exponential_moving_average(x,
+                                        alpha,
+                                        name=None,
+                                        **update_metadata):
+    """
+    ema = alpha * x + (1 - alpha) * ema
+    """
+    with base.variable_scope(name):
+        weight_old = base.get_variable(name="weight", shape=[])
+        weight_new = alpha + (1 - alpha) * weight_old
+        old = base.get_variable(name="ema",
+                                shape=base.get_shape_values(x),
+                                dtype=x.dtype)
+        new = alpha * x + (1 - alpha) * old
+        updates = [(old, new), (weight_old, weight_new)]
+        base.register_updates(updates, **update_metadata)
+        return new * tf.reciprocal(weight_new)
+
+
+unbiased_ema = unbiased_exponential_moving_average
+
+
+def get_exponential_moving_average(name=None):
+    """
+    get state of exponential_moving_average or
+    unbiased_exponential_moving_average
+
+    only useful when reuse-ing variables
+    """
+    with base.variable_scope(name):
+        return base.get_variable(name="ema")
+
+
 @base.hooked
 def linear(x, num_units, name=None):
     with base.variable_scope(name):
