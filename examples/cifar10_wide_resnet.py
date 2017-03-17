@@ -148,6 +148,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             0.1,
             scale=0.2,
             thresholds=[0.3, 0.6, 0.8])
+        tfu.summary.scalar("learning_rate", learning_rate)
         tfu.updates.nesterov_momentum(train_out["cost"],
                                       learning_rate=learning_rate)
 
