@@ -71,8 +71,6 @@ def reuse_variables(variable_scope=None,
 
     def reuse_variables_inner(hs):
         name = hs.kwargs["name"]
-        shape = hs.kwargs["shape"]
-
         full_name = utils.full_variable_name(name)
         # perform replacement
         for r in replace:
@@ -85,7 +83,13 @@ def reuse_variables(variable_scope=None,
 
         if full_name in base.default_graph_state().variables:
             var = base.default_graph_state().variables[full_name]
-            assert utils.get_shape_values(var) == list(shape)
+            # safefy checks
+            if hs.kwargs.get("shape"):
+                shape = hs.kwargs["shape"]
+                assert utils.get_shape_values(var) == list(shape)
+            if hs.kwargs.get("dtype"):
+                dtype = hs.kwargs["dtype"]
+                assert var.dtype == dtype
             return var
         else:
             if create_if_nonexistent:
