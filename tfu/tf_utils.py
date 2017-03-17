@@ -14,7 +14,7 @@ def exponential_moving_average(x,
     """
     with base.variable_scope(name):
         old = base.get_variable(name="ema",
-                                shape=base.get_shape_values(x),
+                                shape=utils.get_shape_values(x),
                                 dtype=x.dtype,
                                 initial_value=initial_value)
         new = alpha * x + (1 - alpha) * old
@@ -36,7 +36,7 @@ def unbiased_exponential_moving_average(x,
         weight_old = base.get_variable(name="weight", shape=[])
         weight_new = alpha + (1 - alpha) * weight_old
         old = base.get_variable(name="ema",
-                                shape=base.get_shape_values(x),
+                                shape=utils.get_shape_values(x),
                                 dtype=x.dtype)
         new = alpha * x + (1 - alpha) * old
         updates = [(old, new), (weight_old, weight_new)]
