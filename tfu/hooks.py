@@ -33,6 +33,19 @@ def override_kwargs_dsl(kwargs, key):
     return base.filter_dsl(override_kwargs(kwargs), key=key)
 
 
+def replace_fn_dsl(new_fn, key):
+    """
+    replaces one function with another
+    """
+
+    def replace_fn_dsl_inner(hs):
+        hs.fn = new_fn
+        return hs()
+
+    return base.filter_dsl(hook=replace_fn_dsl_inner,
+                           key=key)
+
+
 def auto_initialize_variables(session):
     """
     NOTE: this will only initialize tfu variables, not external ones
