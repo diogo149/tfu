@@ -33,10 +33,13 @@ def simple_batch_normalization(tensor, epsilon=1e-4, name=None):
 
 @tfu.hooked
 def ema_batch_normalization(tensor,
-                            use_batch_stats,
+                            use_batch_stats=True,
                             alpha=0.1,
                             epsilon=1e-4,
                             name=None):
+    if tfu.current_metadata().get("deterministic"):
+        use_batch_stats = False
+
     with tfu.variable_scope(name):
         with tfu.variable_scope("batch_normalization"):
             num_units = tfu.get_shape_values(tensor)[-1]
