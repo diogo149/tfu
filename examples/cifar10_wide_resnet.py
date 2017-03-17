@@ -82,10 +82,12 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                                       name="projection")
 
         h = x
+
         with tfu.variable_scope("initial"):
             h = tfu.conv2d(h, num_filters=16)
             h = norm(h)
             prev_act = prev = h = tf.nn.relu(h)
+
         for group_idx in range(1, num_groups + 1):
             for block_idx in range(blocks_per_group):
                 with tfu.variable_scope("block_%d_%d" %
