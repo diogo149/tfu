@@ -307,3 +307,10 @@ def leaky_relu(x, leak=0, name="leaky_relu"):
         f1 = 0.5 * (1 + leak)
         f2 = 0.5 * (1 - leak)
         return f1 * x + f2 * abs(x)
+
+
+@base.hooked
+def dropout(x, keep_prob):
+    if base.current_metadata().get("deterministic"):
+        return x
+    return tf.nn.dropout(x, keep_prob=keep_prob)
