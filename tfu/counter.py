@@ -62,6 +62,10 @@ def set_session(sess):
     return get_default_counter().set_session(sess)
 
 
+def step_op():
+    return get_default_counter()._step_op
+
+
 def step():
     """
     note: should be done at the beginning of each iteration
@@ -93,12 +97,20 @@ def get_progress(dtype=tf.float32):
     return get_default_counter()._progress
 
 
+def get_progress_value():
+    return get_default_counter().get_progress_value()
+
+
 def get_bounded_progress():
     """
     returns progress as a tensor between 0 and 1
     """
     assert get_default_counter().expected_count is not None
     return get_default_counter()._bounded_progress
+
+
+def get_bounded_progress_value():
+    return get_default_counter().get_bounded_progress_value()
 
 
 # ############################ utility functions ############################
