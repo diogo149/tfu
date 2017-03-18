@@ -73,6 +73,17 @@ def time_call(fn, key="time"):
     return time_call_inner
 
 
+def update_summary_printer(fn, summary_printer):
+    """
+    updates a summary printer with results of the fn
+    """
+    def update_summary_printer_inner(*args, **kwargs):
+        res = fn(*args, **kwargs)
+        summary_printer.update(res)
+        return res
+
+    return update_summary_printer_inner
+
 # ################################## batch ##################################
 
 
