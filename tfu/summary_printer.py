@@ -299,3 +299,14 @@ def iter(summary):
                 prev_keys=(),
                 value=0.0,
                 format="%d")
+
+
+@SummaryPrinter.save_recipe()
+def progress(summary):
+    from . import counter
+    summary.add(field_name="progress",
+                in_keys=(),
+                how=lambda: counter.get_progress_value(),
+                prev_keys=(),
+                value=0.0,
+                format="%.4g")
