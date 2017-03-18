@@ -15,33 +15,31 @@ class GlobalStepCounter(object):
         self.expected_count = expected_count
         self.progress_dtype = progress_dtype
 
-        self._count = base.get_variable(name="global_step_counter",
-                                        dtype=tf.int64,
-                                        initial_value=0)
-        self._count_value = 0
-        self._new_count = self._count + 1
-        self._step_op = tf.assign(self._count, self._new_count)
-        if expected_count is not None:
-            self._progress = (tf.cast(self._count, progress_dtype) /
-                              tf.cast(expected_count, progress_dtype))
-            self._bounded_progress = tf.clip_by_value(self._progress, 0, 1)
+        with tf.device("/cpu:0"):
+            self._count = base.get_variable(name="global_step_counter",
+                                            dtype=tf.int64,
+                                            initial_value=0)
+            self._new_count = self._count + 1
+            self._step_op = tf.assign(self._count, self._new_count)
+            if expected_count is not None:
+                self._progress = (tf.cast(self._count, progress_dtype) /
+                                  tf.cast(expected_count, progress_dtype))
+                self._bounded_progress = tf.clip_by_value(self._progress, 0, 1)
 
     def set_session(self, sess):
         self.sess = sess
 
-    def step(self, sess=None):
-        if sess is None:
-            sess = self.sess
-        if sess is None:
-            sess = tf.get_default_session()
-        _, self._count_value = sess.run([self._step_op, self._new_count])
+    def step(self):
+        self.sess.run(self._step_op)
 
-    def sync_count_value(self, sess=None):
-        if sess is None:
-            sess = self.sess
-        if sess is None:
-            sess = tf.get_default_session()
-        self._count_value = sess.run(self._count)
+    def get_count_value(self):
+        return self.sess.run(self._count)
+
+    def get_progress_value(self):
+        return self.sess.run(self._progress)
+
+    def get_bounded_progress_value(self):
+        return self.sess.run(self._bounded_progress)
 
     def as_default(self):
         # TODO implement
@@ -64,12 +62,12 @@ def set_session(sess):
     return get_default_counter().set_session(sess)
 
 
-def step(sess=None):
+def step():
     """
     note: should be done at the beginning of each iteration
     (so the count starts at 1)
     """
-    return get_default_counter().step(sess=sess)
+    return get_default_counter().step()
 
 
 def get_count():
@@ -83,7 +81,7 @@ def get_count_value():
     """
     returns the count as a python value
     """
-    return get_default_counter()._count_value
+    return get_default_counter().get_count_value()
 
 
 def get_progress(dtype=tf.float32):
@@ -102,15 +100,6 @@ def get_bounded_progress():
     assert get_default_counter().expected_count is not None
     return get_default_counter()._bounded_progress
 
-
-def sync_count_value(sess=None):
-    """
-    loads count value from tensorflow session
-
-    use case: loading previous count value from serialized state
-    """
-    get_default_counter().sync_count_value()
-    pass
 
 # ############################ utility functions ############################
 
