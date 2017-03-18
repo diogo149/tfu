@@ -543,8 +543,8 @@ class SummaryAccumulator(TensorFlowFunctionOp):
         summ.ParseFromString(op_res)
         summ_dict = utils.scalar_summary_to_dict(summ)
         self.history.append(summ_dict)
+        global_step = default_graph_state().global_step_counter.get_count_value()
         for file_writer in self.file_writers:
-            global_step = default_graph_state().global_step_counter._count_value
             file_writer.add_summary(summary=summ, global_step=global_step)
         for summary_printer in self.summary_printers:
             summary_printer.update(summ_dict)
