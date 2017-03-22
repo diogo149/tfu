@@ -73,7 +73,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
             h = tfu.conv2d(h, num_filters=10, filter_size=(1, 1))
             h = norm(h)
 
-        h = tf.reduce_mean(h, axis=(2, 3))
+        h = tfu.global_avg_pool2d(h)
         cross_entropy = tf.reduce_mean(
             tfu.softmax_cross_entropy_with_logits(h, y))
         accuracy = tf.reduce_mean(tfu.categorical_accuracy(h, y))
@@ -163,7 +163,6 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     valid_fn = tfu.wrap.update_summary_printer(valid_fn, summary_printer)
 
     train_gen = du.tasks.image_tasks.gen_standard_cifar10_augmentation(train)
-    train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
 
     while tfu.counter.get_count_value() < expected_count:
         with du.timer("epoch"):

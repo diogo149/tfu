@@ -109,7 +109,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                         prev_act = h = tf.nn.relu(h)
             num_filters *= 2
 
-        h = tf.reduce_mean(h, axis=(2, 3))
+        h = tfu.global_avg_pool2d(h)
         h = tfu.affine(h, num_units=10, name="logit")
         cross_entropy = tf.reduce_mean(
             tfu.softmax_cross_entropy_with_logits(h, y))
@@ -200,7 +200,6 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     valid_fn = tfu.wrap.update_summary_printer(valid_fn, summary_printer)
 
     train_gen = du.tasks.image_tasks.gen_standard_cifar10_augmentation(train)
-    train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
 
     while tfu.counter.get_count_value() < expected_count:
         with du.timer("epoch"):
