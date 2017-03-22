@@ -33,9 +33,12 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     tfu.add_hook(tfu.hooks.default_kwargs_dsl(kwargs={"filter_size": (3, 3)},
                                               key="conv2d"))
 
-    tfu.counter.make_default_counter(expected_count=NUM_EPOCHS)
+    epoch_size = len(train["x"]) * 2  # multiply by 2 for flips
+    batches_per_epoch = np.ceil(epoch_size / float(BATCH_SIZE))
+    expected_count = NUM_EPOCHS * batches_per_epoch
+    tfu.counter.make_default_counter(expected_count=expected_count)
 
-    def model(deterministic):
+    def model():
         if 1:
             print "WRN-40-4"
             depth = 40
@@ -59,13 +62,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
         # NOTE: do not change, blocks_per_group calculation assumes this is 3
         num_groups = 3
 
-        if deterministic:
-            keep_prob = 1
-
-        def norm(h):
-            return bn.ema_batch_normalization(
-                h,
-                use_batch_stats=not deterministic)
+        norm = bn.ema_batch_normalization
 
         def shortcut(h, prev):
             h_shape = tfu.get_shape_values(h)
@@ -99,8 +96,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                                        strides=(2 if increase_dim else 1,) * 2)
                         h = norm(h)
                         h = tf.nn.relu(h)
-                        if keep_prob != 1:
-                            h = tf.nn.dropout(h, keep_prob)
+                        h = tfu.dropout(h, keep_prob)
                     with tfu.variable_scope("conv2"):
                         h = tfu.conv2d(h,
                                        num_filters=num_filters)
@@ -143,7 +139,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     updates = tfu.UpdatesAccumulator()
 
     with tfu.variable_scope("train"), train_summary, updates:
-        train_out = model(deterministic=False)
+        train_out = model()
         learning_rate = tfu.counter.discrete_scale_schedule(
             0.1,
             scale=0.2,
@@ -152,8 +148,8 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
         tfu.updates.nesterov_momentum(train_out["cost"],
                                       learning_rate=learning_rate)
 
-    with tfu.variable_scope("valid"), valid_summary:
-        valid_out = model(deterministic=True)
+    with tfu.variable_scope("valid", deterministic=True), valid_summary:
+        valid_out = model()
 
     # enable XLA
     config = tf.ConfigProto()
@@ -163,48 +159,54 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     tfu.counter.set_session(sess)
     sess.run(tf.global_variables_initializer())
 
+    summary_printer = tfu.SummaryPrinter()
+    summary_printer.add_recipe("trial_info", trial)
+    summary_printer.add_recipe("progress")
+    summary_printer.add_recipe("iter")
+    summary_printer.add_recipe("time")
+    summary_printer.add_recipe("s_per_iter")
+    summary_printer.add_recipe("x min+iter",
+                               "valid_epoch/cost",
+                               format="%.4g")
+    summary_printer.add_recipe("x max+iter",
+                               "valid_epoch/accuracy",
+                               format="%.4g")
+    summary_printer.add_recipe("add_finals",
+                               ["train_epoch/cost",
+                                "train_epoch/accuracy",
+                                "valid_epoch/cost",
+                                "valid_epoch/accuracy"],
+                               format="%.4g")
+    train_summary.add_summary_printer(summary_printer)
+    valid_summary.add_summary_printer(summary_printer)
+
     train_fn = tfu.tf_fn(sess=sess,
                          inputs={"x": x,
                                  "y": y},
                          outputs=train_out,
-                         ops=[updates, train_summary])
+                         ops=[updates, train_summary, tfu.counter.step_op()])
+    train_fn = tfu.wrap.output_nan_guard(train_fn)
     train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
+    train_fn = tfu.wrap.format_output_keys(train_fn, "train_epoch/%s")
+    train_fn = tfu.wrap.update_summary_printer(train_fn, summary_printer)
 
     valid_fn = tfu.tf_fn(sess=sess,
                          inputs={"x": x,
                                  "y": y},
                          outputs=valid_out,
                          ops=[valid_summary])
-    valid_fn = tfu.wrap.split_input(valid_fn, split_size=250)
-
-    summary_printer = tfu.SummaryPrinter()
-    summary_printer.add_recipe("trial_info", trial)
-    summary_printer.add_recipe("iter")
-    summary_printer.add_recipe("time")
-    summary_printer.add_recipe("s_per_iter")
-    summary_printer.add_recipe("x min+iter", "valid/cost", format="%.4g")
-    summary_printer.add_recipe("x max+iter", "valid/accuracy", format="%.4g")
-    summary_printer.add_recipe("add_finals",
-                               ["train/cost",
-                                "train/accuracy",
-                                "valid/cost",
-                                "valid/accuracy"],
-                               format="%.4g")
-    train_summary.add_summary_printer(summary_printer)
-    valid_summary.add_summary_printer(summary_printer)
+    valid_fn = tfu.wrap.split_input(valid_fn, split_size=500)
+    valid_fn = tfu.wrap.format_output_keys(valid_fn, "valid_epoch/%s")
+    valid_fn = tfu.wrap.update_summary_printer(valid_fn, summary_printer)
 
     train_gen = du.tasks.image_tasks.gen_standard_cifar10_augmentation(train)
     train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
 
-    for epoch_idx in range(NUM_EPOCHS):
+    while tfu.counter.get_count_value() < expected_count:
         with du.timer("epoch"):
-            tfu.counter.step()
             train_epoch = train_gen.next()
             train_res = train_fn(train_epoch)
-            print("train", train_res)
             valid_res = valid_fn(valid)
-            print("valid", valid_res)
             print(summary_printer.to_org_list())
-            if 0:
-                tfu.serialization.dump_variables(
-                    trial.file_path("final_variables"))
+    if 0:
+        tfu.serialization.dump_variables(trial.file_path("final_variables"))
