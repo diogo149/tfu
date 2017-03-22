@@ -67,10 +67,6 @@ def step_op():
 
 
 def step():
-    """
-    note: should be done at the beginning of each iteration
-    (so the count starts at 1)
-    """
     return get_default_counter().step()
 
 
@@ -90,8 +86,7 @@ def get_count_value():
 
 def get_progress(dtype=tf.float32):
     """
-    returns progress as a tensor (mapping the first count to 1/expected_count
-    and expected_count to 1)
+    returns progress as a tensor
     """
     assert get_default_counter().expected_count is not None
     return get_default_counter()._progress
