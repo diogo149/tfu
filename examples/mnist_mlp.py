@@ -22,20 +22,22 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
                                            replace=[("valid", "train")]))
     tfu.add_hook(tfu.inits.set_weight_init(tfu.inits.msr_normal))
     tfu.add_hook(tfu.inits.scale_weight_inits(np.sqrt(2)))
-    tfu.counter.make_default_counter(expected_count=NUM_EPOCHS)
 
-    def model(deterministic):
+    epoch_size = len(train["x"])
+    batches_per_epoch = np.ceil(epoch_size / float(BATCH_SIZE))
+    expected_count = NUM_EPOCHS * batches_per_epoch
+    tfu.counter.make_default_counter(expected_count=expected_count)
+
+    def model():
         h = tfu.flatten(x, 2)
         with tfu.variable_scope("fc1"):
             h = tfu.affine(h, NUM_UNITS)
             h = tf.nn.relu(h)
-            if not deterministic:
-                h = tf.nn.dropout(h, keep_prob=0.5)
+            h = tfu.dropout(h, keep_prob=0.5)
         with tfu.variable_scope("fc2"):
             h = tfu.affine(h, NUM_UNITS)
             h = tf.nn.relu(h)
-            if not deterministic:
-                h = tf.nn.dropout(h, keep_prob=0.5)
+            h = tfu.dropout(h, keep_prob=0.5)
         h = tfu.affine(h, 10, "logit")
 
         cross_entropy = tf.reduce_mean(
@@ -46,7 +48,7 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
         tfu.summary.scalar("accuracy", accuracy)
 
         return dict(
-            cross_entropy=cross_entropy,
+            cost=cross_entropy,
             accuracy=accuracy,
         )
 
@@ -61,11 +63,11 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     updates = tfu.UpdatesAccumulator()
 
     with tfu.variable_scope("train"), train_summary, updates:
-        train_out = model(False)
-        tfu.updates.adam(train_out["cross_entropy"])
+        train_out = model()
+        tfu.updates.adam(train_out["cost"])
 
-    with tfu.variable_scope("valid"), valid_summary:
-        valid_out = model(True)
+    with tfu.variable_scope("valid", deterministic=True), valid_summary:
+        valid_out = model()
 
     # enable XLA
     config = tf.ConfigProto()
@@ -75,54 +77,58 @@ with du.trial.run_trial(trial_name=trial_name) as trial:
     tfu.counter.set_session(sess)
     sess.run(tf.global_variables_initializer())
 
-    train_fn = tfu.tf_fn(sess=sess,
-                         inputs={"x": x,
-                                 "y": y},
-                         outputs=train_out,
-                         ops=[updates, train_summary],
-                         name="train_fn")
-    train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
-    train_fn = tfu.wrap.shuffle_input(train_fn)
-
-    valid_fn = tfu.tf_fn(sess=sess,
-                         inputs={"x": x,
-                                 "y": y},
-                         outputs=valid_out,
-                         ops=[valid_summary],
-                         name="valid_fn")
-    valid_fn = tfu.wrap.split_input(valid_fn, split_size=BATCH_SIZE)
-
     # load previous iteration
     if 0:
         prev_trial = du.trial.TrialState(trial_name=trial.trial_name,
                                          iteration_num=9)
         tfu.serialization.load_variables(
             prev_trial.file_path("final_variables"))
-        tfu.counter.sync_count_value()
 
     summary_printer = tfu.SummaryPrinter()
     summary_printer.add_recipe("trial_info", trial)
+    summary_printer.add_recipe("progress")
     summary_printer.add_recipe("iter")
     summary_printer.add_recipe("time")
     summary_printer.add_recipe("s_per_iter")
-    summary_printer.add_recipe("x min+iter", "valid/cost", format="%.4g")
-    summary_printer.add_recipe("x max+iter", "valid/accuracy", format="%.4g")
+    summary_printer.add_recipe("x min+iter",
+                               "valid_epoch/cost",
+                               format="%.4g")
+    summary_printer.add_recipe("x max+iter",
+                               "valid_epoch/accuracy",
+                               format="%.4g")
     summary_printer.add_recipe("add_finals",
-                               ["train/cost",
-                                "train/accuracy",
-                                "valid/cost",
-                                "valid/accuracy"],
+                               ["train_epoch/cost",
+                                "train_epoch/accuracy",
+                                "valid_epoch/cost",
+                                "valid_epoch/accuracy"],
                                format="%.4g")
     train_summary.add_summary_printer(summary_printer)
     valid_summary.add_summary_printer(summary_printer)
 
-    while tfu.counter.get_count_value() < NUM_EPOCHS:
+    train_fn = tfu.tf_fn(sess=sess,
+                         inputs={"x": x,
+                                 "y": y},
+                         outputs=train_out,
+                         ops=[updates, train_summary, tfu.counter.step_op()])
+    train_fn = tfu.wrap.output_nan_guard(train_fn)
+    train_fn = tfu.wrap.split_input(train_fn, split_size=BATCH_SIZE)
+    train_fn = tfu.wrap.shuffle_input(train_fn)
+    train_fn = tfu.wrap.format_output_keys(train_fn, "train_epoch/%s")
+    train_fn = tfu.wrap.update_summary_printer(train_fn, summary_printer)
+
+    valid_fn = tfu.tf_fn(sess=sess,
+                         inputs={"x": x,
+                                 "y": y},
+                         outputs=valid_out,
+                         ops=[valid_summary])
+    valid_fn = tfu.wrap.split_input(valid_fn, split_size=BATCH_SIZE)
+    valid_fn = tfu.wrap.format_output_keys(valid_fn, "valid_epoch/%s")
+    valid_fn = tfu.wrap.update_summary_printer(valid_fn, summary_printer)
+
+    while tfu.counter.get_count_value() < expected_count:
         with du.timer("epoch"):
-            tfu.counter.step()
             train_res = train_fn(train)
-            print("train", train_res)
             valid_res = valid_fn(valid)
-            print("valid", valid_res)
             print(summary_printer.to_org_list())
 
     if 0:
